@@ -17,7 +17,8 @@ When I use a trigger phrase below, load and follow the corresponding playbook **
 | `assess [TICKER]`           | `/playbooks/company-assessment.md`     |
 | `options on [TICKER]`       | `/playbooks/options-analysis.md`       |
 | `review my position [TICKER]` | `/playbooks/position-review.md`      |
-| `earnings preview [TICKER]` | `/playbooks/earnings-preview.md`       |
+| `earnings preview [TICKER]`           | `/playbooks/earnings-preview.md`       |
+| `income assessment [TICKER]`          | `/playbooks/income-instrument.md`      |
 
 ## Research Standards
 - Always use web search for current price, recent news, and analyst price targets
