@@ -331,3 +331,44 @@ def match_options_fifo(
     # Stable sort by opener date for deterministic output
     open_remaining.sort(key=lambda o: (o.opener.date, o.opener.ticker))
     return open_remaining, closed_pairs
+
+
+# ---------- P&L ----------
+
+def closed_pair_pnl(pair: ClosedOptionPair) -> float:
+    """
+    Net P&L for a single closed option pair.
+
+    Short legs (STO opener): credit on open, debit on close.
+        net = (open_price - close_price) * qty * 100 - fees_open - fees_close
+    Long legs (BTO opener): debit on open, credit on close.
+        net = (close_price - open_price) * qty * 100 - fees_open - fees_close
+
+    The closer's price is 0 for EXP/ASGN/EXER (premium captured at open).
+    Fees are *prorated by qty* across the opener: if an opener of qty=2 gets
+    closed by two qty=1 closers, half the opener fee applies to each pair.
+    """
+    qty = pair.qty
+    opener_qty = pair.opener.qty
+    opener_fees = pair.opener.fees * (qty / opener_qty)
+    # Closer fees apply fully to this pair's qty (closer rows are typically not split)
+    closer_fees = pair.closer.fees * (qty / pair.closer.qty)
+
+    if pair.opener.action == "STO":
+        gross = (pair.opener.price - pair.closer.price) * qty * 100
+    elif pair.opener.action == "BTO":
+        gross = (pair.closer.price - pair.opener.price) * qty * 100
+    else:
+        raise ValueError(f"unexpected opener action {pair.opener.action}")
+    return gross - opener_fees - closer_fees
+
+
+def premium_banked_by_ticker(
+    closed_pairs: list[ClosedOptionPair],
+) -> dict[tuple[str, str], float]:
+    """Sum net P&L across closed pairs, keyed by (account, ticker)."""
+    banked: dict[tuple[str, str], float] = {}
+    for pair in closed_pairs:
+        key = (pair.opener.account, pair.opener.ticker)
+        banked[key] = banked.get(key, 0.0) + closed_pair_pnl(pair)
+    return banked

@@ -285,5 +285,63 @@ class TestMatchOptionsFifo(unittest.TestCase):
         self.assertEqual(closeds[1].qty, 1)
 
 
+from scripts.watchlist_data import closed_pair_pnl, premium_banked_by_ticker
+
+
+class TestClosedPairPnL(unittest.TestCase):
+    def test_short_sto_btc(self):
+        opener = Trade(date=date(2026, 4, 27), account="r", ticker="F", action="STO",
+                       qty=1, price=0.35, fees=0, strike=12.50,
+                       expiry=date(2026, 5, 1), opt_type="C", strategy_id="", notes="")
+        closer = Trade(date=date(2026, 4, 30), account="r", ticker="F", action="BTC",
+                       qty=1, price=0.01, fees=0, strike=12.50,
+                       expiry=date(2026, 5, 1), opt_type="C", strategy_id="", notes="")
+        pair = ClosedOptionPair(opener=opener, closer=closer, qty=1)
+        # Net = (0.35 - 0.01) * 1 * 100 - 0 - 0 = 34.00
+        self.assertAlmostEqual(closed_pair_pnl(pair), 34.00, places=2)
+
+    def test_short_sto_exp(self):
+        opener = Trade(date=date(2026, 4, 20), account="r", ticker="F", action="STO",
+                       qty=1, price=0.12, fees=0, strike=13.00,
+                       expiry=date(2026, 4, 24), opt_type="C", strategy_id="", notes="")
+        closer = Trade(date=date(2026, 4, 24), account="r", ticker="F", action="EXP",
+                       qty=1, price=0, fees=0, strike=13.00,
+                       expiry=date(2026, 4, 24), opt_type="C", strategy_id="",
+                       notes="expired worthless")
+        pair = ClosedOptionPair(opener=opener, closer=closer, qty=1)
+        self.assertAlmostEqual(closed_pair_pnl(pair), 12.00, places=2)
+
+    def test_short_with_fees(self):
+        opener = Trade(date=date(2026, 4, 1), account="r", ticker="X", action="STO",
+                       qty=2, price=1.00, fees=1.30, strike=50.00,
+                       expiry=date(2026, 5, 15), opt_type="C", strategy_id="", notes="")
+        closer = Trade(date=date(2026, 4, 30), account="r", ticker="X", action="BTC",
+                       qty=2, price=0.10, fees=1.30, strike=50.00,
+                       expiry=date(2026, 5, 15), opt_type="C", strategy_id="", notes="")
+        pair = ClosedOptionPair(opener=opener, closer=closer, qty=2)
+        # Net = (1.00 - 0.10) * 2 * 100 - 1.30 - 1.30 = 180 - 2.60 = 177.40
+        self.assertAlmostEqual(closed_pair_pnl(pair), 177.40, places=2)
+
+    def test_long_bto_stc(self):
+        opener = Trade(date=date(2026, 1, 1), account="r", ticker="X", action="BTO",
+                       qty=1, price=2.00, fees=0, strike=100.00,
+                       expiry=date(2027, 1, 1), opt_type="C", strategy_id="", notes="")
+        closer = Trade(date=date(2026, 6, 1), account="r", ticker="X", action="STC",
+                       qty=1, price=5.00, fees=0, strike=100.00,
+                       expiry=date(2027, 1, 1), opt_type="C", strategy_id="", notes="")
+        pair = ClosedOptionPair(opener=opener, closer=closer, qty=1)
+        # Long: net = (close - open) * qty * 100 - fees = (5 - 2) * 100 = 300
+        self.assertAlmostEqual(closed_pair_pnl(pair), 300.00, places=2)
+
+
+class TestPremiumBankedByTicker(unittest.TestCase):
+    def test_f_total_71(self):
+        trades = load_trades(FIXTURES / "trades.csv")
+        _, closed = match_options_fifo(trades)
+        banked = premium_banked_by_ticker(closed)
+        # 12 + 34 + 25 = 71
+        self.assertAlmostEqual(banked[("robinhood", "F")], 71.00, places=2)
+
+
 if __name__ == "__main__":
     unittest.main()
