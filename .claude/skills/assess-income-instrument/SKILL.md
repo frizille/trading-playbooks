@@ -1,9 +1,15 @@
-# Playbook: Income Instrument Assessment
+---
+name: assess-income-instrument
+description: Use when the user asks about a yield-focused security where dividend or coupon income is the primary thesis — preferred stocks, REITs, BDCs, covered-call ETFs, corporate bonds, or structured products. Triggers on phrases like "income assessment [TICKER]", "is [TICKER] a good yield play", or "assess this preferred [TICKER]".
+---
 
-**Trigger:** `income assessment [TICKER]`
-**Output file:** `/outputs/[TICKER]-income-[YYYY-MM-DD].md`
+# Income Instrument Assessment
 
-**Use this playbook for:** Preferred stocks, REITs, BDCs, covered call ETFs, bonds/notes, structured products, and any security where yield is the primary investment thesis rather than capital appreciation.
+**Output file:** `/outputs/[TICKER]/[TICKER]-income-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist)
+
+**Use this skill for:** Preferred stocks, REITs, BDCs, covered call ETFs, bonds/notes, structured products, and any security where yield is the primary investment thesis rather than capital appreciation.
+
+Follow these steps **exactly** — do not skip or reorder.
 
 ---
 
@@ -78,7 +84,7 @@ The yield is only as good as the issuer's ability to keep paying it. Assess:
 - **Dividend coverage ratio:** (Net income or distributable cash flow) ÷ total preferred dividends. A ratio above 1.5x is comfortable; below 1.0x is a red flag.
 - **Cash reserves:** How many months/years of distributions can the issuer cover from cash on hand if revenue stops?
 - **Credit rating:** S&P / Moody's rating on the issuer or the specific instrument, if available. If unrated, assign an implied rating based on financial health (Investment Grade / High Yield / Distressed).
-- **Collateral:** Is the yield backed by specific assets (real estate, Bitcoin, loans, etc.)? How liquid and stable are those assets?
+- **Collateral:** Is the yield backed by specific assets (real estate, commodities, loans, etc.)? How liquid and stable are those assets?
 
 ---
 
@@ -118,7 +124,7 @@ The yield is only as good as the issuer's ability to keep paying it. Assess:
 ## Step 5: Portfolio Fit
 
 - **Income role:** Does this replace or supplement existing income sources in my portfolio? (Covered call premiums, other dividends, etc.)
-- **Correlation to existing holdings:** Does this add new risk or stack on top of risks I already carry? (e.g., adding a Bitcoin-collateralized preferred when I already hold BTC-adjacent equities)
+- **Correlation to existing holdings:** Does this add new risk or stack on top of risks I already carry? (e.g., adding an asset-backed preferred when I already hold equities exposed to the same underlying asset)
 - **Account fit:**
   - **Taxable account:** Best for ROC-treatment instruments (tax-deferred income) or qualified dividend payers
   - **IRA / Roth IRA:** Best for ordinary income instruments (shields from marginal rate tax); ROC treatment wasted here
@@ -177,6 +183,38 @@ Run three scenarios focused on income sustainability:
 
 ---
 
+## Visualization
+
+Include a Charts plugin block comparing the instrument's yield against the Step 2 benchmark table:
+
+````
+```chart
+type: bar
+labels: [TICKER, 3M T-bill, 2Y Treasury, 10Y Treasury, IG corp, HY corp, S&P 500]
+series:
+  - title: Yield (%)
+    data: [, , , , , , ]
+```
+````
+
+This makes the spread over Treasuries visually obvious and is the single most useful chart for an income instrument.
+
+---
+
 ## Output
-Write full assessment to `/outputs/[TICKER]-income-[YYYY-MM-DD].md`.
+
+Write full assessment to `/outputs/[TICKER]/[TICKER]-income-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist).
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md):
+```yaml
+skill: assess-income-instrument
+verdict: INITIATE              # INITIATE / MONITOR / AVOID / SUBSTITUTE
+instrument_type: Preferred     # Preferred / REIT / BDC / CC_ETF / Bond / Structured
+current_yield: 8.4             # current annual yield %
+income_quality: Medium         # High / Medium / Low / Speculative
+tax_treatment: Qualified       # Qualified / Ordinary / ROC / Tax-exempt
+account: IRA                   # taxable / IRA / Roth / HSA — recommended account if initiating
+tags: [research, income]
+```
+
 In chat, summarize with: instrument type, current yield, income quality rating, recommended action, and ideal account if initiating.

@@ -1,0 +1,3 @@
+date,account,ticker,action,qty,price,fees,strike,expiry,opt_type,strategy_id,notes
+2026-01-15,account_1,EXAMPLE,BUY,100,50.00,0,,,,,initial position
+2026-01-20,account_1,EXAMPLE,STO,1,1.25,0,55.00,2026-02-20,C,,first CC
