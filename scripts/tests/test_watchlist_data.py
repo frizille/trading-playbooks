@@ -144,6 +144,18 @@ class TestValidateTrade(unittest.TestCase):
                 self.VALID_ACCOUNTS,
             )
 
+    def test_option_event_without_expiry_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(
+                self._trade(
+                    action="STO",
+                    qty=1,
+                    strike=12.50,
+                    opt_type="C",
+                ),
+                self.VALID_ACCOUNTS,
+            )
+
     def test_zero_qty_fails(self):
         with self.assertRaises(ValidationError):
             validate_trade(self._trade(qty=0), self.VALID_ACCOUNTS)

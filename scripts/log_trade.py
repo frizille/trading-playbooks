@@ -27,7 +27,6 @@ from scripts.watchlist_data import (
     Trade,
     ValidationError,
     load_accounts,
-    load_trades,
     validate_trade,
 )
 

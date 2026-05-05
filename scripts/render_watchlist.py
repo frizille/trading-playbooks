@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date as _date
 from pathlib import Path
 
 # Allow running as a script from repo root
@@ -25,7 +26,6 @@ from scripts.watchlist_data import (
     Account,
     ClosedOptionPair,
     OpenOption,
-    OPTION_ACTIONS,
     SHARE_ACTIONS,
     Trade,
     closed_pair_pnl,
@@ -125,7 +125,6 @@ def _outcome_label(closer_action: str) -> str:
 
 
 def _render_active_options(open_options: list[OpenOption]) -> str:
-    from datetime import date as _date
     out: list[str] = ["---\n", "## Active Options Positions\n"]
     if not open_options:
         out.append("_No active option positions._\n")
