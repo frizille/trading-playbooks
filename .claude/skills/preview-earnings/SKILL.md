@@ -14,6 +14,12 @@ Follow these steps **exactly** — do not skip or reorder.
 ## Pre-Flight
 1. Check `/watchlist.md` for current position and any active options near the earnings date.
 2. Web search: `[TICKER] earnings date Q[X] [YEAR]` — confirm exact date and whether it's before or after market.
+3. **Pull structured news (optional but preferred):** if a `FINNHUB_API_KEY` is configured (env var or `.env` at repo root), run the news helper from the repo root for the last 90 days to capture the post-last-earnings news flow:
+   - If `.venv/` exists: `.venv/bin/python scripts/finnhub_news.py [TICKER] --days 90`
+   - Otherwise: `python3 scripts/finnhub_news.py [TICKER] --days 90`
+
+   Use this as the canonical source for Step 2 (Last Quarter Recap) and Step 4 (Key Things to Watch). Cite headlines by date and source.
+4. **If the helper fails or the key isn't set,** say so explicitly and fall back to web search. Do not silently skip.
 
 ---
 

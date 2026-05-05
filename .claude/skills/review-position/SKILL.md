@@ -12,7 +12,13 @@ Follow these steps **exactly** — do not skip or reorder.
 ---
 
 ## Pre-Flight
-Load full position detail from `/watchlist.md` for this ticker across all accounts.
+1. Load full position detail from `/watchlist.md` for this ticker across all accounts.
+2. **Pull structured news (optional but preferred):** if a `FINNHUB_API_KEY` is configured (env var or `.env` at repo root), run the news helper from the repo root for the last 30 days:
+   - If `.venv/` exists: `.venv/bin/python scripts/finnhub_news.py [TICKER] --days 30`
+   - Otherwise: `python3 scripts/finnhub_news.py [TICKER] --days 30`
+
+   Use this as the canonical news source for Step 3 (Thesis Check). Cite headlines by date and source.
+3. **If the helper fails or the key isn't set,** say so explicitly and fall back to web search for recent news. Do not silently skip.
 
 ---
 
@@ -33,11 +39,12 @@ Calculate the real cost basis after options income:
 - Break-even price at effective cost basis
 
 ## Step 3: Thesis Check
-Web search for recent news, earnings, and analyst updates:
+Use the Finnhub feed from Pre-Flight as the primary news source; supplement with web search for analyst price-target changes, broker upgrades/downgrades, and anything older than the news window.
 - Is the original investment thesis still intact? State the thesis in one sentence, then evaluate.
 - What has changed since the position was opened (positively or negatively)?
 - Any new risks that weren't present at entry?
 - Management changes, product pivots, competitive shifts?
+- Cite the 2–4 most material headlines by date + source from the feed (skip filler/PR noise).
 
 ## Step 4: Technical Snapshot
 - Current price vs 200-day MA (above/below, %)
