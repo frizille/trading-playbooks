@@ -64,5 +64,98 @@ class TestLoadWishlist(unittest.TestCase):
         self.assertEqual(entries, [])
 
 
+from scripts.watchlist_data import ValidationError, validate_trade
+
+
+class TestValidateTrade(unittest.TestCase):
+    VALID_ACCOUNTS = {"robinhood", "simple_ira"}
+
+    def _trade(self, **overrides):
+        defaults = dict(
+            date=date(2026, 5, 4),
+            account="robinhood",
+            ticker="F",
+            action="BUY",
+            qty=100,
+            price=12.50,
+            fees=0.0,
+            strike=None,
+            expiry=None,
+            opt_type=None,
+            strategy_id="",
+            notes="",
+        )
+        defaults.update(overrides)
+        return Trade(**defaults)
+
+    def test_valid_share_buy_passes(self):
+        validate_trade(self._trade(), self.VALID_ACCOUNTS)  # no raise
+
+    def test_valid_option_open_passes(self):
+        validate_trade(
+            self._trade(
+                action="STO",
+                qty=1,
+                price=0.35,
+                strike=12.50,
+                expiry=date(2026, 5, 8),
+                opt_type="C",
+            ),
+            self.VALID_ACCOUNTS,
+        )
+
+    def test_unknown_account_fails(self):
+        with self.assertRaises(ValidationError) as cm:
+            validate_trade(self._trade(account="fidelity"), self.VALID_ACCOUNTS)
+        self.assertIn("fidelity", str(cm.exception))
+        self.assertIn("robinhood", str(cm.exception))
+
+    def test_invalid_action_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(self._trade(action="WAT"), self.VALID_ACCOUNTS)
+
+    def test_share_event_with_strike_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(
+                self._trade(action="BUY", strike=12.50), self.VALID_ACCOUNTS
+            )
+
+    def test_option_event_without_strike_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(
+                self._trade(
+                    action="STO",
+                    qty=1,
+                    expiry=date(2026, 5, 8),
+                    opt_type="C",
+                ),
+                self.VALID_ACCOUNTS,
+            )
+
+    def test_option_event_without_opt_type_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(
+                self._trade(
+                    action="STO",
+                    qty=1,
+                    strike=12.50,
+                    expiry=date(2026, 5, 8),
+                ),
+                self.VALID_ACCOUNTS,
+            )
+
+    def test_zero_qty_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(self._trade(qty=0), self.VALID_ACCOUNTS)
+
+    def test_negative_price_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(self._trade(price=-1.00), self.VALID_ACCOUNTS)
+
+    def test_negative_fees_fails(self):
+        with self.assertRaises(ValidationError):
+            validate_trade(self._trade(fees=-0.50), self.VALID_ACCOUNTS)
+
+
 if __name__ == "__main__":
     unittest.main()

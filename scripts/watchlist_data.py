@@ -140,3 +140,48 @@ def load_wishlist(path: Path) -> list[WishlistEntry]:
                 )
             )
     return entries
+
+
+# ---------- Validation ----------
+
+class ValidationError(ValueError):
+    pass
+
+
+def validate_trade(trade: Trade, valid_accounts: set[str]) -> None:
+    """Raise ValidationError if the trade is invalid. No return on success."""
+    if trade.account not in valid_accounts:
+        raise ValidationError(
+            f"unknown account {trade.account!r}; "
+            f"valid: {sorted(valid_accounts)}"
+        )
+    if trade.action not in VALID_ACTIONS:
+        raise ValidationError(
+            f"unknown action {trade.action!r}; valid: {sorted(VALID_ACTIONS)}"
+        )
+    if trade.qty <= 0:
+        raise ValidationError(f"qty must be > 0, got {trade.qty}")
+    if trade.price < 0:
+        raise ValidationError(f"price must be >= 0, got {trade.price}")
+    if trade.fees < 0:
+        raise ValidationError(f"fees must be >= 0, got {trade.fees}")
+
+    is_option = trade.action in OPTION_ACTIONS
+    is_share = trade.action in SHARE_ACTIONS
+    is_dividend = trade.action == "DIV"
+
+    if is_option:
+        if trade.strike is None:
+            raise ValidationError(f"option event {trade.action} requires strike")
+        if trade.expiry is None:
+            raise ValidationError(f"option event {trade.action} requires expiry")
+        if trade.opt_type not in ("C", "P"):
+            raise ValidationError(
+                f"option event {trade.action} requires opt_type C or P, "
+                f"got {trade.opt_type!r}"
+            )
+    elif is_share or is_dividend:
+        if trade.strike is not None or trade.expiry is not None or trade.opt_type:
+            raise ValidationError(
+                f"{trade.action} event must have blank strike/expiry/opt_type"
+            )
