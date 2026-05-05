@@ -9,6 +9,19 @@ Always consider position sizing and account type (taxable, IRA, HSA) when making
 See `/watchlist.md` for current positions, cost basis, cost basis reduction via options, and account type.
 Never make add/trim recommendations without first checking the watchlist for current exposure.
 
+## Watchlist Data Layer
+
+The `/watchlist.md` file is **fully machine-rendered** from structured sources in `data/`. **Never hand-edit `watchlist.md`** — your edits will be overwritten on the next render.
+
+Sources of truth (all gitignored):
+- `data/trades.csv` — append-only event log (shares, options, dividends).
+- `data/wishlist.csv` — wishlist of names without positions yet.
+- `data/accounts.yaml` — per-account metadata.
+
+Use the **`manage-watchlist` skill** for any position/wishlist/account change. The skill mediates writes through `scripts/log_trade.py` with a confirm-before-write gate, then re-renders `watchlist.md` via `scripts/render_watchlist.py`.
+
+For state queries ("show me my open positions"), read `watchlist.md` directly — it's the authoritative current state.
+
 ## Research Skills
 Domain-specific research workflows live in `.claude/skills/` and activate automatically based on user intent:
 
