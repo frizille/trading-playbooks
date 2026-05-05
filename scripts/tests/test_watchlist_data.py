@@ -355,5 +355,67 @@ class TestPremiumBankedByTicker(unittest.TestCase):
         self.assertAlmostEqual(banked[("robinhood", "F")], 71.00, places=2)
 
 
+class TestClosedPairPnLAssignmentExercise(unittest.TestCase):
+    """ASGN/EXER closers price=0; full premium captured at open."""
+
+    def test_sto_assigned(self):
+        opener = Trade(date=date(2026, 4, 27), account="r", ticker="F", action="STO",
+                       qty=1, price=0.35, fees=0, strike=12.50,
+                       expiry=date(2026, 5, 1), opt_type="C", strategy_id="", notes="")
+        closer = Trade(date=date(2026, 5, 1), account="r", ticker="F", action="ASGN",
+                       qty=1, price=0, fees=0, strike=12.50,
+                       expiry=date(2026, 5, 1), opt_type="C", strategy_id="", notes="")
+        pair = ClosedOptionPair(opener=opener, closer=closer, qty=1)
+        self.assertAlmostEqual(closed_pair_pnl(pair), 35.00, places=2)
+
+    def test_bto_exercised(self):
+        opener = Trade(date=date(2026, 1, 1), account="r", ticker="X", action="BTO",
+                       qty=1, price=2.00, fees=0, strike=100.00,
+                       expiry=date(2027, 1, 1), opt_type="C", strategy_id="", notes="")
+        closer = Trade(date=date(2026, 6, 1), account="r", ticker="X", action="EXER",
+                       qty=1, price=0, fees=0, strike=100.00,
+                       expiry=date(2027, 1, 1), opt_type="C", strategy_id="", notes="")
+        pair = ClosedOptionPair(opener=opener, closer=closer, qty=1)
+        # Long: (close - open) * qty * 100 = (0 - 2) * 100 = -200 (premium spent on the option)
+        self.assertAlmostEqual(closed_pair_pnl(pair), -200.00, places=2)
+
+
+class TestMatchOptionsFifoSameDay(unittest.TestCase):
+    """A same-day open-and-close should match because openers sort before closers."""
+
+    def test_same_day_open_and_close_matches(self):
+        trades = [
+            Trade(date=date(2026, 5, 5), account="r", ticker="F", action="STO",
+                  qty=1, price=0.30, fees=0, strike=13.00, expiry=date(2026, 5, 8),
+                  opt_type="C", strategy_id="", notes=""),
+            Trade(date=date(2026, 5, 5), account="r", ticker="F", action="BTC",
+                  qty=1, price=0.05, fees=0, strike=13.00, expiry=date(2026, 5, 8),
+                  opt_type="C", strategy_id="", notes=""),
+        ]
+        opens, closeds = match_options_fifo(trades)
+        self.assertEqual(opens, [])
+        self.assertEqual(len(closeds), 1)
+        self.assertEqual(closeds[0].opener.action, "STO")
+        self.assertEqual(closeds[0].closer.action, "BTC")
+
+
+class TestDividendsBankedByTicker(unittest.TestCase):
+    def test_sums_div_dollars(self):
+        from scripts.watchlist_data import dividends_banked_by_ticker
+        trades = [
+            Trade(date=date(2026, 1, 1), account="r", ticker="X", action="BUY",
+                  qty=100, price=10.00, fees=0, strike=None, expiry=None,
+                  opt_type=None, strategy_id="", notes=""),
+            Trade(date=date(2026, 3, 15), account="r", ticker="X", action="DIV",
+                  qty=100, price=0.50, fees=0, strike=None, expiry=None,
+                  opt_type=None, strategy_id="", notes=""),
+            Trade(date=date(2026, 6, 15), account="r", ticker="X", action="DIV",
+                  qty=100, price=0.55, fees=0, strike=None, expiry=None,
+                  opt_type=None, strategy_id="", notes=""),
+        ]
+        result = dividends_banked_by_ticker(trades)
+        self.assertAlmostEqual(result[("r", "X")], 105.00, places=2)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -216,11 +216,15 @@ class Position:
 
 def compute_positions(share_trades: list[Trade]) -> dict[tuple[str, str], Position]:
     """
-    Build current positions from share events using FIFO depletion on SELL
-    and the share legs of ASGN/EXER. Input is already filtered to share-affecting
-    events.
+    Build current positions from share events. Input must be pre-filtered to
+    SHARE_ACTIONS (BUY/SELL only). The share legs of ASGN/EXER are recorded by
+    the manage-watchlist skill as separate BUY/SELL rows, so they flow through
+    here naturally.
 
-    Returns dict keyed by (account, ticker). Tickers with zero shares are omitted.
+    Uses FIFO lot depletion on SELL events. Returns dict keyed by
+    (account, ticker). Tickers with zero shares are omitted. Raises ValueError
+    if a non-BUY/SELL action is encountered (defensive guard against unfiltered
+    input).
     """
     positions: dict[tuple[str, str], Position] = {}
     # Sort by date so FIFO is deterministic across same-day events (input order
@@ -372,3 +376,21 @@ def premium_banked_by_ticker(
         key = (pair.opener.account, pair.opener.ticker)
         banked[key] = banked.get(key, 0.0) + closed_pair_pnl(pair)
     return banked
+
+
+def dividends_banked_by_ticker(
+    trades: list[Trade],
+) -> dict[tuple[str, str], float]:
+    """
+    Sum total dividend dollars per (account, ticker) from DIV events.
+
+    For DIV rows, qty = shares held at ex-date and price = $/share, so the
+    dollar amount is qty * price.
+    """
+    out: dict[tuple[str, str], float] = {}
+    for t in trades:
+        if t.action != "DIV":
+            continue
+        key = (t.account, t.ticker)
+        out[key] = out.get(key, 0.0) + t.qty * t.price
+    return out

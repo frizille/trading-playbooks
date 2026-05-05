@@ -30,6 +30,7 @@ from scripts.watchlist_data import (
     Trade,
     closed_pair_pnl,
     compute_positions,
+    dividends_banked_by_ticker,
     load_accounts,
     load_trades,
     load_wishlist,
@@ -42,7 +43,10 @@ def render(
     accounts_path: Path,
     wishlist_path: Path,
     trades_path: Path,
+    today: _date | None = None,
 ) -> str:
+    if today is None:
+        today = _date.today()
     accounts = load_accounts(accounts_path)
     wishlist = load_wishlist(wishlist_path)
     trades = load_trades(trades_path)
@@ -51,12 +55,13 @@ def render(
     positions = compute_positions(share_trades)
     open_options, closed_pairs = match_options_fifo(trades)
     banked = premium_banked_by_ticker(closed_pairs)
+    dividends = dividends_banked_by_ticker(trades)
 
     parts: list[str] = []
     parts.append("# Watchlist & Current Positions\n")
-    parts.append(_render_positions(accounts, positions, banked))
-    parts.append(_render_active_options(open_options))
-    parts.append(_render_closed_history(closed_pairs))
+    parts.append(_render_positions(accounts, positions, banked, dividends))
+    parts.append(_render_active_options(open_options, accounts, today))
+    parts.append(_render_closed_history(closed_pairs, accounts))
     parts.append(_render_wishlist(wishlist))
     parts.append(_render_notes(accounts))
     return "\n".join(parts)
@@ -70,7 +75,12 @@ def _signed_money(x: float) -> str:
     return f"+{_money(x)}" if x >= 0 else f"-{_money(-x)}"
 
 
-def _render_positions(accounts, positions, banked) -> str:
+def _md_cell(s: str) -> str:
+    """Sanitize a string for inclusion in a markdown table cell."""
+    return s.replace("|", r"\|").replace("\n", " ")
+
+
+def _render_positions(accounts, positions, banked, dividends) -> str:
     out: list[str] = ["## Positions by Account\n"]
     for acct in accounts:
         out.append(f"### {acct.display_name}\n")
@@ -82,21 +92,26 @@ def _render_positions(accounts, positions, banked) -> str:
             out.append("_No positions._\n")
             continue
         out.append(
-            "| Ticker | Shares | Avg Cost | Lots | Premium Banked | Effective Basis |"
+            "| Ticker | Shares | Avg Cost | Lots | Premium Banked | Dividends | Effective Basis |"
         )
         out.append(
-            "|--------|--------|----------|------|----------------|-----------------|"
+            "|--------|--------|----------|------|----------------|-----------|-----------------|"
         )
         for key, pos in rows:
             premium = banked.get(key, 0.0)
-            eff_basis = pos.avg_cost - (premium / pos.shares) if pos.shares else 0.0
+            divs = dividends.get(key, 0.0)
+            eff_basis = (
+                pos.avg_cost - ((premium + divs) / pos.shares)
+                if pos.shares else 0.0
+            )
             lots_str = "<br>".join(
                 f"{lot.qty} @ {_money(lot.price)} ({lot.date.isoformat()})"
                 for lot in pos.lots
             )
             out.append(
                 f"| {key[1]} | {pos.shares} | {_money(pos.avg_cost)} | "
-                f"{lots_str} | {_money(premium)} | {_money(eff_basis)} |"
+                f"{lots_str} | {_money(premium)} | {_money(divs)} | "
+                f"{_money(eff_basis)} |"
             )
         out.append("")  # trailing blank line
     return "\n".join(out)
@@ -124,7 +139,15 @@ def _outcome_label(closer_action: str) -> str:
     }.get(closer_action, closer_action)
 
 
-def _render_active_options(open_options: list[OpenOption]) -> str:
+def _account_display_map(accounts: list[Account]) -> dict[str, str]:
+    return {a.name: a.display_name for a in accounts}
+
+
+def _render_active_options(
+    open_options: list[OpenOption],
+    accounts: list[Account],
+    today: _date,
+) -> str:
     out: list[str] = ["---\n", "## Active Options Positions\n"]
     if not open_options:
         out.append("_No active option positions._\n")
@@ -135,20 +158,24 @@ def _render_active_options(open_options: list[OpenOption]) -> str:
     out.append(
         "|--------|------|--------|--------|-----|---------|-----|-------------|-------|"
     )
-    today = _date.today()
+    display = _account_display_map(accounts)
     for o in sorted(open_options, key=lambda x: (x.opener.expiry, x.opener.ticker)):
         op = o.opener
         dte = (op.expiry - today).days
+        acct_label = display.get(op.account, op.account)
         out.append(
             f"| {op.ticker} | {_opt_type_label(op)} | {_money(op.strike)} | "
-            f"{op.expiry.isoformat()} | {o.qty} | {op.account} | {dte} | "
-            f"{_money(op.price)} | {op.notes} |"
+            f"{op.expiry.isoformat()} | {o.qty} | {_md_cell(acct_label)} | {dte} | "
+            f"{_money(op.price)} | {_md_cell(op.notes)} |"
         )
     out.append("")
     return "\n".join(out)
 
 
-def _render_closed_history(closed_pairs: list[ClosedOptionPair]) -> str:
+def _render_closed_history(
+    closed_pairs: list[ClosedOptionPair],
+    accounts: list[Account],
+) -> str:
     out: list[str] = ["---\n", "## Closed Options History\n"]
     if not closed_pairs:
         out.append("_No closed options yet._\n")
@@ -161,17 +188,19 @@ def _render_closed_history(closed_pairs: list[ClosedOptionPair]) -> str:
         "|--------|------|--------|--------|--------|--------|-------------|"
         "-------------|---------|---------|---------|"
     )
+    display = _account_display_map(accounts)
     for pair in sorted(
         closed_pairs, key=lambda p: (p.closer.date, p.opener.date), reverse=True
     ):
         op = pair.opener
         cl = pair.closer
         pnl = closed_pair_pnl(pair)
+        acct_label = display.get(op.account, op.account)
         out.append(
             f"| {op.ticker} | {_opt_type_label(op)} | {_money(op.strike)} | "
             f"{op.expiry.isoformat()} | {op.date.isoformat()} | "
             f"{cl.date.isoformat()} | {_money(op.price)} | {_money(cl.price)} | "
-            f"{_signed_money(pnl)} | {op.account} | {_outcome_label(cl.action)} |"
+            f"{_signed_money(pnl)} | {_md_cell(acct_label)} | {_outcome_label(cl.action)} |"
         )
     out.append("")
     return "\n".join(out)
@@ -188,7 +217,9 @@ def _render_wishlist(wishlist) -> str:
     for entry in sorted(
         wishlist, key=lambda e: (pri.get(e.priority.lower(), 99), e.date_added)
     ):
-        out.append(f"| {entry.ticker} | {entry.thesis} | {entry.priority} |")
+        out.append(
+            f"| {entry.ticker} | {_md_cell(entry.thesis)} | {entry.priority} |"
+        )
     out.append("")
     return "\n".join(out)
 

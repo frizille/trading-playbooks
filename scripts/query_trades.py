@@ -22,14 +22,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.watchlist_data import (
     SHARE_ACTIONS,
     compute_positions,
-    load_accounts,
     load_trades,
     match_options_fifo,
     premium_banked_by_ticker,
 )
 
 
-def premium_by_ticker(accounts_path: Path, trades_path: Path) -> dict[str, float]:
+def premium_by_ticker(trades_path: Path) -> dict[str, float]:
     """Sum premium banked per ticker across all accounts."""
     trades = load_trades(trades_path)
     _, closed = match_options_fifo(trades)
@@ -40,9 +39,7 @@ def premium_by_ticker(accounts_path: Path, trades_path: Path) -> dict[str, float
     return out
 
 
-def open_positions_summary(
-    accounts_path: Path, trades_path: Path
-) -> dict[str, dict]:
+def open_positions_summary(trades_path: Path) -> dict[str, dict]:
     """For each ticker held: total shares (across accounts) and premium banked."""
     trades = load_trades(trades_path)
     share_trades = [t for t in trades if t.action in SHARE_ACTIONS]
@@ -63,14 +60,13 @@ def open_positions_summary(
 def main() -> int:
     p = argparse.ArgumentParser(description="Trades analytics queries")
     p.add_argument("query", choices=["premium-by-ticker", "open-positions"])
-    p.add_argument("--accounts", default="data/accounts.yaml", type=Path)
     p.add_argument("--trades", default="data/trades.csv", type=Path)
     args = p.parse_args()
 
     if args.query == "premium-by-ticker":
-        result = premium_by_ticker(args.accounts, args.trades)
+        result = premium_by_ticker(args.trades)
     else:
-        result = open_positions_summary(args.accounts, args.trades)
+        result = open_positions_summary(args.trades)
     print(json.dumps(result, indent=2, default=str))
     return 0
 

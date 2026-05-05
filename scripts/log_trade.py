@@ -50,10 +50,21 @@ def _row_to_trade(row: dict) -> Trade:
         fees=float(row["fees"]) if row["fees"] else 0.0,
         strike=float(row["strike"]) if row["strike"] else None,
         expiry=_fdate(row["expiry"]),
-        opt_type=row["opt_type"] if row["opt_type"] else None,
+        opt_type=row["opt_type"].upper() if row["opt_type"] else None,
         strategy_id=row["strategy_id"],
         notes=row["notes"],
     )
+
+
+def _check_existing_header(trades_path: Path) -> None:
+    """Verify an existing trades.csv has the expected header. Raise on mismatch."""
+    with open(trades_path) as f:
+        first = f.readline().rstrip("\n").rstrip("\r")
+    actual = [c.strip() for c in first.split(",")]
+    if actual != CSV_HEADERS:
+        raise ValidationError(
+            f"trades.csv header mismatch — expected {CSV_HEADERS}, got {actual}"
+        )
 
 
 def append_trade(
@@ -67,6 +78,8 @@ def append_trade(
         accounts = load_accounts(accounts_path)
         valid_names = {a.name for a in accounts}
         validate_trade(trade, valid_names)
+        if trades_path.exists():
+            _check_existing_header(trades_path)
     except (ValueError, ValidationError) as e:
         print(f"validation error: {e}", file=sys.stderr)
         sys.exit(2)
