@@ -1,0 +1,9 @@
+date,account,ticker,action,qty,price,fees,strike,expiry,opt_type,strategy_id,notes
+2026-04-20,robinhood,F,BUY,100,12.78,0,,,,,
+2026-04-20,robinhood,F,STO,1,0.12,0,13.00,2026-04-24,C,,
+2026-04-24,robinhood,F,EXP,1,0,0,13.00,2026-04-24,C,,expired worthless
+2026-04-27,robinhood,F,STO,1,0.35,0,12.50,2026-05-01,C,,
+2026-04-28,robinhood,F,BUY,100,12.31,0,,,,,
+2026-04-28,robinhood,F,STO,1,0.26,0,12.50,2026-05-01,C,,
+2026-04-30,robinhood,F,BTC,1,0.01,0,12.50,2026-05-01,C,,closed early
+2026-04-30,robinhood,F,BTC,1,0.01,0,12.50,2026-05-01,C,,closed early

@@ -1,0 +1,9 @@
+accounts:
+  - name: robinhood
+    display_name: "Robinhood (Individual Taxable)"
+    type: taxable
+    tax_notes: "Robinhood is taxable — short-term assignments/sales trigger short-term capital gains."
+  - name: simple_ira
+    display_name: "SIMPLE IRA"
+    type: ira
+    tax_notes: "SIMPLE IRA is tax-deferred; covered calls and CSPs incur no current tax."
