@@ -1,9 +1,15 @@
-# Playbook: Income Instrument Assessment
+---
+name: assess-income-instrument
+description: Use when the user asks about a yield-focused security where dividend or coupon income is the primary thesis — preferred stocks, REITs, BDCs, covered-call ETFs, corporate bonds, or structured products. Triggers on phrases like "income assessment [TICKER]", "is [TICKER] a good yield play", or "assess this preferred [TICKER]".
+---
 
-**Trigger:** `income assessment [TICKER]`
+# Income Instrument Assessment
+
 **Output file:** `/outputs/[TICKER]-income-[YYYY-MM-DD].md`
 
-**Use this playbook for:** Preferred stocks, REITs, BDCs, covered call ETFs, bonds/notes, structured products, and any security where yield is the primary investment thesis rather than capital appreciation.
+**Use this skill for:** Preferred stocks, REITs, BDCs, covered call ETFs, bonds/notes, structured products, and any security where yield is the primary investment thesis rather than capital appreciation.
+
+Follow these steps **exactly** — do not skip or reorder.
 
 ---
 
@@ -78,7 +84,7 @@ The yield is only as good as the issuer's ability to keep paying it. Assess:
 - **Dividend coverage ratio:** (Net income or distributable cash flow) ÷ total preferred dividends. A ratio above 1.5x is comfortable; below 1.0x is a red flag.
 - **Cash reserves:** How many months/years of distributions can the issuer cover from cash on hand if revenue stops?
 - **Credit rating:** S&P / Moody's rating on the issuer or the specific instrument, if available. If unrated, assign an implied rating based on financial health (Investment Grade / High Yield / Distressed).
-- **Collateral:** Is the yield backed by specific assets (real estate, Bitcoin, loans, etc.)? How liquid and stable are those assets?
+- **Collateral:** Is the yield backed by specific assets (real estate, commodities, loans, etc.)? How liquid and stable are those assets?
 
 ---
 
@@ -118,7 +124,7 @@ The yield is only as good as the issuer's ability to keep paying it. Assess:
 ## Step 5: Portfolio Fit
 
 - **Income role:** Does this replace or supplement existing income sources in my portfolio? (Covered call premiums, other dividends, etc.)
-- **Correlation to existing holdings:** Does this add new risk or stack on top of risks I already carry? (e.g., adding a Bitcoin-collateralized preferred when I already hold BTC-adjacent equities)
+- **Correlation to existing holdings:** Does this add new risk or stack on top of risks I already carry? (e.g., adding an asset-backed preferred when I already hold equities exposed to the same underlying asset)
 - **Account fit:**
   - **Taxable account:** Best for ROC-treatment instruments (tax-deferred income) or qualified dividend payers
   - **IRA / Roth IRA:** Best for ordinary income instruments (shields from marginal rate tax); ROC treatment wasted here

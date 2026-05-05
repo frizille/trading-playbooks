@@ -1,7 +1,13 @@
-# Playbook: Position Review
+---
+name: review-position
+description: Use when the user asks to review, check on, revisit, or reassess an existing held position. Triggers on phrases like "review my position [TICKER]", "how is my [TICKER] doing", "check on [TICKER]", or "should I still be holding [TICKER]".
+---
 
-**Trigger:** `review my position [TICKER]`
+# Position Review
+
 **Output file:** `/outputs/[TICKER]-review-[YYYY-MM-DD].md`
+
+Follow these steps **exactly** — do not skip or reorder.
 
 ---
 

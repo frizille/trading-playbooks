@@ -1,7 +1,13 @@
-# Playbook: Earnings Preview
+---
+name: preview-earnings
+description: Use when the user asks for an earnings preview, pre-earnings analysis, or what to watch for in an upcoming quarterly report. Triggers on phrases like "earnings preview [TICKER]", "what to watch for [TICKER] earnings", or "[TICKER] reports next week".
+---
 
-**Trigger:** `earnings preview [TICKER]`
+# Earnings Preview
+
 **Output file:** `/outputs/[TICKER]-earnings-[YYYY-MM-DD].md`
+
+Follow these steps **exactly** — do not skip or reorder.
 
 ---
 
@@ -35,7 +41,7 @@ List the 3–5 metrics or themes that will most likely drive the reaction. These
 1. **[Metric]:** Consensus expects X. Beat threshold is Y. Why it matters: 
 2. **[Metric]:** 
 3. **[Metric]:** 
-4. **[Theme]:** (e.g., guidance commentary, margin expansion, AI demand signals)
+4. **[Theme]:** (e.g., guidance commentary, margin expansion, end-market demand signals)
 5. **[Theme]:**
 
 ## Step 5: Bull vs Bear Scenarios
@@ -77,7 +83,7 @@ Check all active options expiring within 2 weeks of earnings:
 - If stock misses and drops: 
 
 **Watch for on the call:**
-- Management tone on AI / data center demand (if applicable)
+- Demand commentary in core end markets
 - Any changes to capex plans
 - Commentary on competitive environment
 

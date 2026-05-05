@@ -1,7 +1,13 @@
-# Playbook: Options Analysis
+---
+name: analyze-options
+description: Use when the user asks about options strategy on a specific ticker — covered calls, cash-secured puts, LEAPS, or long calls. Triggers on phrases like "options on [TICKER]", "covered call on [TICKER]", "what should I sell against [TICKER]", or any options-strategy question for a held or considered name.
+---
 
-**Trigger:** `options on [TICKER]`
+# Options Analysis
+
 **Output file:** `/outputs/[TICKER]-options-[YYYY-MM-DD].md`
+
+Follow these steps **exactly** — do not skip or reorder.
 
 ---
 
