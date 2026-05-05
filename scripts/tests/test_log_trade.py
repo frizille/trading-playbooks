@@ -120,6 +120,35 @@ class TestAppendTrade(unittest.TestCase):
         self.assertEqual(last["action"], "STO")
         self.assertEqual(last["opt_type"], "C")
 
+    def test_padded_identifiers_are_stripped_and_uppercased(self):
+        """Padding/casing on key identifiers must canonicalize to a single FIFO bucket."""
+        append_trade(
+            row={
+                "date": "2026-05-04",
+                "account": " robinhood ",  # padded
+                "ticker": " f ",            # padded + lowercase
+                "action": " sto ",          # padded + lowercase
+                "qty": "1",
+                "price": "0.30",
+                "fees": "0",
+                "strike": "13.00",
+                "expiry": "2026-05-15",
+                "opt_type": " c ",          # padded + lowercase
+                "strategy_id": " roll1 ",   # padded
+                "notes": "",
+            },
+            trades_path=self.trades,
+            accounts_path=self.accounts,
+        )
+        with open(self.trades) as f:
+            rows = list(csv.DictReader(f))
+        last = rows[-1]
+        self.assertEqual(last["account"], "robinhood")
+        self.assertEqual(last["ticker"], "F")
+        self.assertEqual(last["action"], "STO")
+        self.assertEqual(last["opt_type"], "C")
+        self.assertEqual(last["strategy_id"], "roll1")
+
     def test_appends_to_empty_file_writes_header(self):
         """An existing-but-empty trades.csv should be treated as new (write header)."""
         empty = self.tmp / "empty.csv"
@@ -152,6 +181,13 @@ class TestAppendTrade(unittest.TestCase):
         with open(empty) as f:
             rows = list(csv.DictReader(f))
         self.assertEqual(len(rows), 1)
+        # Verify the data row contents land correctly (catches a regression
+        # where the empty-file branch could write the wrong values).
+        self.assertEqual(rows[0]["ticker"], "F")
+        self.assertEqual(rows[0]["action"], "BUY")
+        self.assertEqual(rows[0]["account"], "robinhood")
+        self.assertEqual(rows[0]["qty"], "100")
+        self.assertEqual(rows[0]["price"], "11.50")
 
 
 class TestLogTradeMainEndToEnd(unittest.TestCase):

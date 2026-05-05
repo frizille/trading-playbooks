@@ -77,12 +77,22 @@ def _check_existing_header(trades_path: Path) -> bool:
 
 
 def _normalize_row(row: dict) -> dict:
-    """Return a row dict with case-normalized fields persisted to CSV."""
+    """
+    Canonicalize key fields persisted to CSV.
+
+    Strips whitespace and uppercases identifier-like fields (ticker, action,
+    opt_type) so downstream FIFO matching keys on consistent values regardless
+    of input source. Account and strategy_id are stripped but not uppercased
+    (case-sensitive identifiers). `notes` is left untouched so freeform user
+    text preserves intentional spacing.
+    """
     out = dict(row)
-    out["ticker"] = row["ticker"].upper()
-    out["action"] = row["action"].upper()
+    out["account"] = row["account"].strip()
+    out["ticker"] = row["ticker"].strip().upper()
+    out["action"] = row["action"].strip().upper()
+    out["strategy_id"] = row.get("strategy_id", "").strip()
     if row.get("opt_type"):
-        out["opt_type"] = row["opt_type"].upper()
+        out["opt_type"] = row["opt_type"].strip().upper()
     return out
 
 
