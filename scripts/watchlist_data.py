@@ -253,3 +253,81 @@ def _deplete_fifo(pos: Position, qty: int) -> None:
             f"FIFO depletion underflow on {pos.account}/{pos.ticker}: "
             f"tried to sell {qty} but only {pos.shares + (qty - remaining)} held"
         )
+
+
+# ---------- Option matching ----------
+
+@dataclass(frozen=True)
+class OpenOption:
+    opener: Trade
+    qty: int  # remaining open qty (may be < opener.qty if partially closed)
+
+
+@dataclass(frozen=True)
+class ClosedOptionPair:
+    opener: Trade
+    closer: Trade
+    qty: int  # qty of contracts in this matched pair
+
+
+def _option_key(t: Trade) -> tuple[str, str, float, date, str]:
+    return (t.account, t.ticker, t.strike, t.expiry, t.opt_type)
+
+
+def match_options_fifo(
+    trades: list[Trade],
+) -> tuple[list[OpenOption], list[ClosedOptionPair]]:
+    """
+    Match option openers to closers FIFO. Returns (open_remaining, closed_pairs).
+    Raises ValidationError if any closer cannot be matched.
+
+    Same-day opener+closer is allowed (e.g., open and close in one session) —
+    we sort by (date, action_priority) where opens come before closes on the
+    same date.
+    """
+    # Action priority: opens (0) before closes (1) within same date so a
+    # same-day open-and-close matches.
+    def priority(t: Trade) -> int:
+        return 0 if t.action in OPTION_OPEN else 1
+
+    option_trades = [t for t in trades if t.action in OPTION_ACTIONS]
+    option_trades.sort(key=lambda t: (t.date, priority(t)))
+
+    # open_queues: key -> list[(opener, remaining_qty)]
+    open_queues: dict[tuple, list[list]] = {}
+    closed_pairs: list[ClosedOptionPair] = []
+
+    for t in option_trades:
+        key = _option_key(t)
+        if t.action in OPTION_OPEN:
+            open_queues.setdefault(key, []).append([t, t.qty])
+        else:
+            queue = open_queues.get(key, [])
+            remaining = t.qty
+            while remaining > 0 and queue:
+                head_opener, head_qty = queue[0]
+                take = min(head_qty, remaining)
+                closed_pairs.append(
+                    ClosedOptionPair(opener=head_opener, closer=t, qty=take)
+                )
+                remaining -= take
+                if take == head_qty:
+                    queue.pop(0)
+                else:
+                    queue[0][1] = head_qty - take
+            if remaining > 0:
+                raise ValidationError(
+                    f"unmatched closer at row date {t.date} "
+                    f"{t.account}/{t.ticker} {t.action} {t.qty}x "
+                    f"strike={t.strike} expiry={t.expiry} {t.opt_type}: "
+                    f"missing opener for {remaining} contract(s)"
+                )
+
+    open_remaining: list[OpenOption] = []
+    for queue in open_queues.values():
+        for opener, remaining_qty in queue:
+            if remaining_qty > 0:
+                open_remaining.append(OpenOption(opener=opener, qty=remaining_qty))
+    # Stable sort by opener date for deterministic output
+    open_remaining.sort(key=lambda o: (o.opener.date, o.opener.ticker))
+    return open_remaining, closed_pairs

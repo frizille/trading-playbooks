@@ -219,5 +219,71 @@ class TestComputePositions(unittest.TestCase):
         self.assertEqual(len(pos.lots), 1)
 
 
+from scripts.watchlist_data import (
+    ClosedOptionPair,
+    OpenOption,
+    match_options_fifo,
+)
+
+
+class TestMatchOptionsFifo(unittest.TestCase):
+    def test_migration_data_matches_three_pairs_no_open(self):
+        trades = load_trades(FIXTURES / "trades.csv")
+        opens, closeds = match_options_fifo(trades)
+        self.assertEqual(opens, [])
+        self.assertEqual(len(closeds), 3)
+
+    def test_match_fifo_when_two_opens_same_key(self):
+        trades = [
+            Trade(date=date(2026, 4, 27), account="r", ticker="F", action="STO",
+                  qty=1, price=0.35, fees=0, strike=12.50, expiry=date(2026, 5, 1),
+                  opt_type="C", strategy_id="", notes=""),
+            Trade(date=date(2026, 4, 28), account="r", ticker="F", action="STO",
+                  qty=1, price=0.26, fees=0, strike=12.50, expiry=date(2026, 5, 1),
+                  opt_type="C", strategy_id="", notes=""),
+            Trade(date=date(2026, 4, 30), account="r", ticker="F", action="BTC",
+                  qty=1, price=0.01, fees=0, strike=12.50, expiry=date(2026, 5, 1),
+                  opt_type="C", strategy_id="", notes=""),
+        ]
+        opens, closeds = match_options_fifo(trades)
+        self.assertEqual(len(opens), 1)
+        # The 4/28 STO (priced 0.26) is still open; 4/27 STO (0.35) closed first.
+        self.assertEqual(opens[0].opener.price, 0.26)
+        self.assertEqual(len(closeds), 1)
+        self.assertEqual(closeds[0].opener.price, 0.35)
+
+    def test_unmatched_closer_raises(self):
+        trades = [
+            Trade(date=date(2026, 5, 1), account="r", ticker="F", action="BTC",
+                  qty=1, price=0.01, fees=0, strike=12.50, expiry=date(2026, 5, 8),
+                  opt_type="C", strategy_id="", notes=""),
+        ]
+        with self.assertRaises(ValidationError) as cm:
+            match_options_fifo(trades)
+        self.assertIn("unmatched", str(cm.exception).lower())
+
+    def test_qty_split_across_multiple_opens(self):
+        trades = [
+            Trade(date=date(2026, 4, 1), account="r", ticker="X", action="STO",
+                  qty=1, price=1.00, fees=0, strike=50.00, expiry=date(2026, 5, 15),
+                  opt_type="C", strategy_id="", notes=""),
+            Trade(date=date(2026, 4, 5), account="r", ticker="X", action="STO",
+                  qty=2, price=1.50, fees=0, strike=50.00, expiry=date(2026, 5, 15),
+                  opt_type="C", strategy_id="", notes=""),
+            Trade(date=date(2026, 4, 20), account="r", ticker="X", action="BTC",
+                  qty=2, price=0.10, fees=0, strike=50.00, expiry=date(2026, 5, 15),
+                  opt_type="C", strategy_id="", notes=""),
+        ]
+        opens, closeds = match_options_fifo(trades)
+        self.assertEqual(len(opens), 1)
+        self.assertEqual(opens[0].qty, 1)  # 1 of the 2 from 4/5 still open
+        self.assertEqual(opens[0].opener.price, 1.50)
+        self.assertEqual(len(closeds), 2)
+        self.assertEqual(closeds[0].opener.date, date(2026, 4, 1))
+        self.assertEqual(closeds[0].qty, 1)
+        self.assertEqual(closeds[1].opener.date, date(2026, 4, 5))
+        self.assertEqual(closeds[1].qty, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
