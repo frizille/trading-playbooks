@@ -58,11 +58,14 @@ class TestRenderActiveOptions(unittest.TestCase):
                 today=FIXED_TODAY,
             )
         self.assertIn("## Active Options Positions", actual)
-        self.assertIn("F | CC | $13.00 | 2026-05-15", actual)
-        # DTE = 2026-05-15 - 2026-05-05 = 10
-        self.assertIn(" | 10 | ", actual)
-        # Account renders by display_name, not raw "robinhood"
-        self.assertIn("Robinhood (Individual Taxable)", actual)
+        # Anchor the assertion on the full row substring so unrelated " | 10 | "
+        # occurrences elsewhere in the output don't accidentally satisfy it.
+        # DTE = 2026-05-15 - 2026-05-05 = 10. Account renders by display_name.
+        expected_row = (
+            "| F | CC | $13.00 | 2026-05-15 | 1 "
+            "| Robinhood (Individual Taxable) | 10 | $0.30 | first weekly |"
+        )
+        self.assertIn(expected_row, actual)
 
     def test_pipe_in_notes_is_escaped(self):
         with tempfile.TemporaryDirectory() as tmp:

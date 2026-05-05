@@ -56,15 +56,34 @@ def _row_to_trade(row: dict) -> Trade:
     )
 
 
-def _check_existing_header(trades_path: Path) -> None:
-    """Verify an existing trades.csv has the expected header. Raise on mismatch."""
+def _check_existing_header(trades_path: Path) -> bool:
+    """
+    Verify an existing trades.csv has the expected header.
+
+    Returns True if a valid header is present.
+    Returns False if the file is empty (caller should write the header).
+    Raises ValidationError on a mismatched non-empty header.
+    """
     with open(trades_path) as f:
         first = f.readline().rstrip("\n").rstrip("\r")
+    if first == "":
+        return False
     actual = [c.strip() for c in first.split(",")]
     if actual != CSV_HEADERS:
         raise ValidationError(
             f"trades.csv header mismatch — expected {CSV_HEADERS}, got {actual}"
         )
+    return True
+
+
+def _normalize_row(row: dict) -> dict:
+    """Return a row dict with case-normalized fields persisted to CSV."""
+    out = dict(row)
+    out["ticker"] = row["ticker"].upper()
+    out["action"] = row["action"].upper()
+    if row.get("opt_type"):
+        out["opt_type"] = row["opt_type"].upper()
+    return out
 
 
 def append_trade(
@@ -73,25 +92,26 @@ def append_trade(
     accounts_path: Path,
 ) -> None:
     """Validate and append. On invalid input prints to stderr and sys.exit(2)."""
+    has_header = False
     try:
-        trade = _row_to_trade(row)
+        normalized = _normalize_row(row)
+        trade = _row_to_trade(normalized)
         accounts = load_accounts(accounts_path)
         valid_names = {a.name for a in accounts}
         validate_trade(trade, valid_names)
         if trades_path.exists():
-            _check_existing_header(trades_path)
+            has_header = _check_existing_header(trades_path)
     except (ValueError, ValidationError) as e:
         print(f"validation error: {e}", file=sys.stderr)
         sys.exit(2)
 
-    # Append (CSV writer; empty strings preserved for blank fields)
-    file_exists = trades_path.exists()
+    # Append the normalized form so case-canonicalized values land in the CSV
+    # and downstream readers (FIFO matching) can rely on them.
     with open(trades_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_HEADERS)
-        if not file_exists:
+        if not has_header:
             writer.writeheader()
-        # Use the original row dict so blanks stay blank (don't write "None")
-        writer.writerow({k: row.get(k, "") for k in CSV_HEADERS})
+        writer.writerow({k: normalized.get(k, "") for k in CSV_HEADERS})
 
 
 def _render(accounts_path: Path, trades_path: Path, wishlist_path: Path,

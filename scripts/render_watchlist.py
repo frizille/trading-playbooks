@@ -77,7 +77,11 @@ def _signed_money(x: float) -> str:
 
 def _md_cell(s: str) -> str:
     """Sanitize a string for inclusion in a markdown table cell."""
-    return s.replace("|", r"\|").replace("\n", " ")
+    return (
+        s.replace("|", r"\|")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
 
 
 def _render_positions(accounts, positions, banked, dividends) -> str:
@@ -218,7 +222,8 @@ def _render_wishlist(wishlist) -> str:
         wishlist, key=lambda e: (pri.get(e.priority.lower(), 99), e.date_added)
     ):
         out.append(
-            f"| {entry.ticker} | {_md_cell(entry.thesis)} | {entry.priority} |"
+            f"| {_md_cell(entry.ticker)} | {_md_cell(entry.thesis)} "
+            f"| {_md_cell(entry.priority)} |"
         )
     out.append("")
     return "\n".join(out)

@@ -93,19 +93,19 @@ class TestAppendTrade(unittest.TestCase):
             )
 
     def test_lowercase_opt_type_normalized(self):
-        """opt_type='c' should be uppercased to 'C' before validation."""
+        """Lowercase opt_type/ticker/action are uppercased AND persisted to the CSV."""
         append_trade(
             row={
                 "date": "2026-05-04",
                 "account": "robinhood",
-                "ticker": "F",
-                "action": "STO",
+                "ticker": "f",       # lowercase
+                "action": "sto",     # lowercase
                 "qty": "1",
                 "price": "0.30",
                 "fees": "0",
                 "strike": "13.00",
                 "expiry": "2026-05-15",
-                "opt_type": "c",  # lowercase — should still succeed
+                "opt_type": "c",     # lowercase
                 "strategy_id": "",
                 "notes": "",
             },
@@ -115,6 +115,43 @@ class TestAppendTrade(unittest.TestCase):
         with open(self.trades) as f:
             rows = list(csv.DictReader(f))
         self.assertEqual(len(rows), 9)
+        last = rows[-1]
+        self.assertEqual(last["ticker"], "F")
+        self.assertEqual(last["action"], "STO")
+        self.assertEqual(last["opt_type"], "C")
+
+    def test_appends_to_empty_file_writes_header(self):
+        """An existing-but-empty trades.csv should be treated as new (write header)."""
+        empty = self.tmp / "empty.csv"
+        empty.write_text("")
+        append_trade(
+            row={
+                "date": "2026-05-04",
+                "account": "robinhood",
+                "ticker": "F",
+                "action": "BUY",
+                "qty": "100",
+                "price": "11.50",
+                "fees": "0",
+                "strike": "",
+                "expiry": "",
+                "opt_type": "",
+                "strategy_id": "",
+                "notes": "",
+            },
+            trades_path=empty,
+            accounts_path=self.accounts,
+        )
+        with open(empty) as f:
+            content = f.read()
+        # Header line + one data row
+        self.assertTrue(content.startswith(",".join(
+            ["date", "account", "ticker", "action", "qty", "price", "fees",
+             "strike", "expiry", "opt_type", "strategy_id", "notes"]
+        )))
+        with open(empty) as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual(len(rows), 1)
 
 
 class TestLogTradeMainEndToEnd(unittest.TestCase):
