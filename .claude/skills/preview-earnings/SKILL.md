@@ -89,6 +89,37 @@ Check all active options expiring within 2 weeks of earnings:
 
 ---
 
+## Visualization
+
+Include a Charts plugin block comparing the options-implied move to historical actuals (from Step 3):
+
+````
+```chart
+type: bar
+labels: [Implied (this Q), Q-1, Q-2, Q-3, Q-4, Avg of last 4]
+series:
+  - title: Earnings move (%)
+    data: [, , , , , ]
+```
+````
+
+Use absolute % move (direction-agnostic) so implied vs realized are comparable.
+
+---
+
 ## Output
+
 Write full preview to `/outputs/[TICKER]-earnings-[YYYY-MM-DD].md`.
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md):
+```yaml
+skill: preview-earnings
+verdict: HOLD              # HOLD / TRIM_BEFORE / CLOSE_OPTIONS / PLAY_MOVE / NONE
+earnings_date: 2026-05-14  # YYYY-MM-DD
+earnings_time: AMC         # BMO / AMC
+implied_move_pct: 7.2      # options-implied move at writing time
+historical_avg_move_pct: 5.4  # avg of last 4 quarters
+tags: [research, earnings]
+```
+
 In chat, summarize with: earnings date, implied move, the one most important metric to watch, and pre-earnings action needed.

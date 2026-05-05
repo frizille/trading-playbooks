@@ -77,6 +77,19 @@ Suggest the user trigger the deep-dive skill explicitly — do **not** auto-run 
 ## Output
 
 Write the screen results to `/outputs/screen-[descriptor]-[YYYY-MM-DD].md`.
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md — note `ticker` is the descriptor for screens, and `price` is omitted):
+```yaml
+ticker: sp500-under-20            # screen descriptor, not a real ticker
+date: 2026-05-04
+skill: screen-tickers
+verdict: SHORTLIST                # always SHORTLIST for screens
+universe: S&P 500
+survivors: 23                     # count after hard filters
+top_candidates: [F, RIG, KSS]     # tickers from the "Top candidates for full assessment" list
+tags: [research, screen]
+```
+
 In chat, summarize with: universe, number of survivors, top 3 names with one-liners, and the recommended next step.
 
 ## Boundaries

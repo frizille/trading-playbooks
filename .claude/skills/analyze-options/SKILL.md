@@ -107,6 +107,50 @@ For the recommended covered call trade:
 
 ---
 
+## Visualization
+
+Include two Charts plugin blocks in the report:
+
+**1. IV vs realized vol** (from Step 3 data):
+
+````
+```chart
+type: bar
+labels: [ATM IV, Realized 30d, Realized 90d]
+series:
+  - title: Annualized vol (%)
+    data: [, , ]
+```
+````
+
+**2. Annualized premium yield by expiry** (from the Step 4 covered call table — use the recommended Δ row at each expiry):
+
+````
+```chart
+type: bar
+labels: [Near, Mid, Far]
+series:
+  - title: Annualized yield (%)
+    data: [, , ]
+```
+````
+
+---
+
 ## Output
+
 Write full analysis to `/outputs/[TICKER]-options-[YYYY-MM-DD].md`.
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md):
+```yaml
+skill: analyze-options
+verdict: SELL_CC          # SELL_CC / SELL_CSP / BUY_LEAPS / NONE
+trade_type: CC            # CC / CSP / LEAPS / Spread / None
+strike: 12                # numeric strike of the recommended trade (omit if NONE)
+expiry: 2026-06-20        # YYYY-MM-DD (omit if NONE)
+premium: 0.42             # mid premium per share at recommendation time
+annualized_yield: 18.3    # % annualized — from Step 4
+tags: [research, options]
+```
+
 In chat, summarize with: recommended trade, premium yield, and key risk to watch.

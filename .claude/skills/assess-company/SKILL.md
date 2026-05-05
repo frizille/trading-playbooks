@@ -88,6 +88,38 @@ Only complete this step if the company has liquid options.
 
 ---
 
+## Visualization
+
+Include a peer-comparison chart in the report if at least 2 peers from Step 1 have comparable P/E or P/S data. Use the Charts plugin block:
+
+````
+```chart
+type: bar
+labels: [TICKER, PEER1, PEER2, PEER3]
+series:
+  - title: Forward P/E
+    data: [, , , ]
+  - title: Forward P/S
+    data: [, , , ]
+```
+````
+
+Skip the chart if peer data is unavailable rather than fabricate values.
+
+---
+
 ## Output
+
 Write the full report to `/outputs/[TICKER]-assessment-[YYYY-MM-DD].md`.
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md):
+```yaml
+skill: assess-company
+verdict: BUY            # BUY / ADD / HOLD / TRIM / AVOID
+conviction: High        # Low / Medium / High
+action: Initiate        # Initiate / Add / Hold / Trim / Avoid
+position_pct: 5         # suggested position size as % of portfolio (omit if Hold/Avoid)
+tags: [research, assessment]
+```
+
 In chat, summarize with: current price, verdict, and one-line rationale.

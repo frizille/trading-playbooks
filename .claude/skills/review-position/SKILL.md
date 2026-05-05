@@ -79,6 +79,36 @@ For each active option:
 
 ---
 
+## Visualization
+
+Include a Charts plugin block showing cost basis vs effective cost basis vs current price (from Steps 1–2):
+
+````
+```chart
+type: bar
+labels: [Cost basis, Effective cost basis, Current price]
+series:
+  - title: $ per share
+    data: [, , ]
+```
+````
+
+Skip if no premium has been collected (effective cost basis = cost basis makes the chart redundant).
+
+---
+
 ## Output
+
 Write full review to `/outputs/[TICKER]-review-[YYYY-MM-DD].md`.
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md):
+```yaml
+skill: review-position
+verdict: HOLD             # HOLD / ADD / TRIM / EXIT / MANAGE_OPTIONS
+thesis: Intact            # Intact / Weakened / Broken
+pnl_pct: 12.4             # unrealized P&L % at current price
+position_pct: 7.2         # current % of total portfolio
+tags: [research, review]
+```
+
 In chat, summarize with: current P&L, thesis status, and recommended action.

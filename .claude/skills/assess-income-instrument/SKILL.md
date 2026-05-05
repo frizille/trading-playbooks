@@ -183,6 +183,38 @@ Run three scenarios focused on income sustainability:
 
 ---
 
+## Visualization
+
+Include a Charts plugin block comparing the instrument's yield against the Step 2 benchmark table:
+
+````
+```chart
+type: bar
+labels: [TICKER, 3M T-bill, 2Y Treasury, 10Y Treasury, IG corp, HY corp, S&P 500]
+series:
+  - title: Yield (%)
+    data: [, , , , , , ]
+```
+````
+
+This makes the spread over Treasuries visually obvious and is the single most useful chart for an income instrument.
+
+---
+
 ## Output
+
 Write full assessment to `/outputs/[TICKER]-income-[YYYY-MM-DD].md`.
+
+**Frontmatter** (in addition to the shared fields in CLAUDE.md):
+```yaml
+skill: assess-income-instrument
+verdict: INITIATE              # INITIATE / MONITOR / AVOID / SUBSTITUTE
+instrument_type: Preferred     # Preferred / REIT / BDC / CC_ETF / Bond / Structured
+current_yield: 8.4             # current annual yield %
+income_quality: Medium         # High / Medium / Low / Speculative
+tax_treatment: Qualified       # Qualified / Ordinary / ROC / Tax-exempt
+account: IRA                   # taxable / IRA / Roth / HSA — recommended account if initiating
+tags: [research, income]
+```
+
 In chat, summarize with: instrument type, current yield, income quality rating, recommended action, and ideal account if initiating.

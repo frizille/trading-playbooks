@@ -33,6 +33,32 @@ When a skill activates, follow its steps **exactly** — do not skip or reorder 
 - Save all full research reports to `/outputs/` using format: `[TICKER]-[playbook-name]-[YYYY-MM-DD].md`
 - Summarize key findings in chat (3–5 bullets), full detail goes in the file
 - If I ask a follow-up question after a playbook run, answer from the context of that session — don't restart the playbook
+- Every report **must** start with YAML frontmatter (see "Report Frontmatter" below) so Obsidian Dataview can query across reports
+- Use the Charts plugin (```chart fenced blocks) where the skill specifies; do not invent ASCII charts
+
+## Report Frontmatter
+Every output file in `/outputs/` starts with this YAML block. Skill-specific fields are listed in each skill's `## Output` section.
+
+```yaml
+---
+ticker: F                         # uppercase ticker; for screens use the descriptor (e.g., sp500-under-20)
+date: 2026-05-04                  # YYYY-MM-DD, the date the report was written
+skill: analyze-options            # one of: assess-company | analyze-options | review-position | preview-earnings | assess-income-instrument | screen-tickers
+verdict: HOLD                     # short, ALL-CAPS — BUY / ADD / HOLD / TRIM / AVOID / INITIATE / MONITOR / NONE
+price: 11.50                      # current price at time of writing (omit for screens)
+tags: [research, options]         # always include "research" plus skill-specific tags
+# ...skill-specific fields here (see each skill's Output section)
+---
+```
+
+Use real values, not placeholders. If a field genuinely doesn't apply (e.g., `price` for a screen), omit the line — don't write `null` or `N/A`.
+
+## Tooling Requirements
+- **Obsidian** (https://obsidian.md) — install and open the vault on the `/outputs/` folder of this repo. All reports are written as `.md` files there with frontmatter for cross-report queries.
+- **Dataview plugin** (community plugin) — required for querying frontmatter across reports (e.g., "show all BUY-verdict assessments in the last 30 days").
+- **Charts plugin** (community plugin) — required for rendering ```chart fenced blocks emitted by the skills.
+
+If Obsidian isn't pointed at `/outputs/`, frontmatter and chart blocks still render as plain markdown elsewhere, but Dataview queries won't run and charts won't render.
 
 ## Constraints
 - Never recommend a single position exceed 15% of total portfolio without flagging the concentration risk
