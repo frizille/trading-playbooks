@@ -157,5 +157,67 @@ class TestValidateTrade(unittest.TestCase):
             validate_trade(self._trade(fees=-0.50), self.VALID_ACCOUNTS)
 
 
+from scripts.watchlist_data import Lot, compute_positions, SHARE_ACTIONS
+
+
+class TestComputePositions(unittest.TestCase):
+    def test_two_lots_no_sells(self):
+        trades = load_trades(FIXTURES / "trades.csv")
+        share_trades = [t for t in trades if t.action in SHARE_ACTIONS]
+        positions = compute_positions(share_trades)
+        # Key: (account, ticker)
+        f_pos = positions[("robinhood", "F")]
+        self.assertEqual(f_pos.shares, 200)
+        self.assertAlmostEqual(f_pos.avg_cost, 12.545, places=3)
+        self.assertEqual(len(f_pos.lots), 2)
+        self.assertEqual(f_pos.lots[0], Lot(qty=100, price=12.78, date=date(2026, 4, 20)))
+        self.assertEqual(f_pos.lots[1], Lot(qty=100, price=12.31, date=date(2026, 4, 28)))
+
+    def test_partial_sell_fifo(self):
+        trades = [
+            Trade(
+                date=date(2026, 1, 1), account="a", ticker="X", action="BUY",
+                qty=100, price=10.00, fees=0, strike=None, expiry=None,
+                opt_type=None, strategy_id="", notes="",
+            ),
+            Trade(
+                date=date(2026, 2, 1), account="a", ticker="X", action="BUY",
+                qty=100, price=20.00, fees=0, strike=None, expiry=None,
+                opt_type=None, strategy_id="", notes="",
+            ),
+            Trade(
+                date=date(2026, 3, 1), account="a", ticker="X", action="SELL",
+                qty=50, price=25.00, fees=0, strike=None, expiry=None,
+                opt_type=None, strategy_id="", notes="",
+            ),
+        ]
+        positions = compute_positions(trades)
+        pos = positions[("a", "X")]
+        self.assertEqual(pos.shares, 150)
+        # FIFO depletes first lot: 50 @ 10 left + 100 @ 20 = (500 + 2000) / 150
+        self.assertAlmostEqual(pos.avg_cost, 16.6667, places=3)
+        self.assertEqual(len(pos.lots), 2)
+        self.assertEqual(pos.lots[0].qty, 50)
+        self.assertEqual(pos.lots[1].qty, 100)
+
+    def test_full_liquidation_then_rebuy(self):
+        trades = [
+            Trade(date=date(2026, 1, 1), account="a", ticker="X", action="BUY",
+                  qty=100, price=10.00, fees=0, strike=None, expiry=None,
+                  opt_type=None, strategy_id="", notes=""),
+            Trade(date=date(2026, 2, 1), account="a", ticker="X", action="SELL",
+                  qty=100, price=15.00, fees=0, strike=None, expiry=None,
+                  opt_type=None, strategy_id="", notes=""),
+            Trade(date=date(2026, 3, 1), account="a", ticker="X", action="BUY",
+                  qty=50, price=12.00, fees=0, strike=None, expiry=None,
+                  opt_type=None, strategy_id="", notes=""),
+        ]
+        positions = compute_positions(trades)
+        pos = positions[("a", "X")]
+        self.assertEqual(pos.shares, 50)
+        self.assertAlmostEqual(pos.avg_cost, 12.00, places=2)
+        self.assertEqual(len(pos.lots), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

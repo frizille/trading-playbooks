@@ -185,3 +185,71 @@ def validate_trade(trade: Trade, valid_accounts: set[str]) -> None:
             raise ValidationError(
                 f"{trade.action} event must have blank strike/expiry/opt_type"
             )
+
+
+# ---------- Position math ----------
+
+@dataclass(frozen=True)
+class Lot:
+    qty: int
+    price: float
+    date: date
+
+
+@dataclass
+class Position:
+    account: str
+    ticker: str
+    lots: list[Lot] = field(default_factory=list)
+
+    @property
+    def shares(self) -> int:
+        return sum(lot.qty for lot in self.lots)
+
+    @property
+    def avg_cost(self) -> float:
+        s = self.shares
+        if s == 0:
+            return 0.0
+        return sum(lot.qty * lot.price for lot in self.lots) / s
+
+
+def compute_positions(share_trades: list[Trade]) -> dict[tuple[str, str], Position]:
+    """
+    Build current positions from share events using FIFO depletion on SELL
+    and the share legs of ASGN/EXER. Input is already filtered to share-affecting
+    events.
+
+    Returns dict keyed by (account, ticker). Tickers with zero shares are omitted.
+    """
+    positions: dict[tuple[str, str], Position] = {}
+    # Sort by date so FIFO is deterministic across same-day events (input order
+    # within a date breaks ties).
+    for t in sorted(share_trades, key=lambda x: (x.date,)):
+        key = (t.account, t.ticker)
+        pos = positions.setdefault(key, Position(account=t.account, ticker=t.ticker))
+        if t.action == "BUY":
+            pos.lots.append(Lot(qty=t.qty, price=t.price, date=t.date))
+        elif t.action == "SELL":
+            _deplete_fifo(pos, t.qty)
+        else:
+            raise ValueError(f"compute_positions got non-share action {t.action!r}")
+    # Drop empty positions
+    return {k: v for k, v in positions.items() if v.shares > 0}
+
+
+def _deplete_fifo(pos: Position, qty: int) -> None:
+    remaining = qty
+    while remaining > 0 and pos.lots:
+        head = pos.lots[0]
+        if head.qty > remaining:
+            pos.lots[0] = Lot(qty=head.qty - remaining, price=head.price, date=head.date)
+            remaining = 0
+        else:
+            remaining -= head.qty
+            pos.lots.pop(0)
+    if remaining > 0:
+        raise ValidationError(
+            f"FIFO depletion underflow on {pos.account}/{pos.ticker}: "
+            f"tried to sell {qty} but only {pos.shares + (qty - remaining)} held"
+        )
