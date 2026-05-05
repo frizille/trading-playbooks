@@ -13,7 +13,8 @@ Follow these steps **exactly** — do not skip or reorder.
 
 ## Pre-Flight
 1. Check `/watchlist.md` — what's the current position? Shares held, account type, current cost basis, and any existing options on this name.
-2. Web search: `[TICKER] stock price options chain` — get current price and confirm options liquidity.
+2. **Pull live chain data:** run `python3 scripts/option_chain.py [TICKER] --expiries 3` from the repo root. This is the canonical source for spot, IV, strikes, and delta in Steps 3–5. Output covers: spot price, risk-free rate, dividend yield, realized vol (30d / 90d), next earnings date, and tables of calls/puts at 15Δ / 25Δ / 35Δ / 50Δ for each of the next 3 expiries.
+3. **If the script fails** (missing dependency, no network, ticker has no options), say so explicitly, then fall back to web search for spot + IV. Do not silently skip the script.
 
 ---
 
@@ -31,30 +32,46 @@ This is not a full company assessment — just enough to set the options strateg
 - Any known near-term catalysts that could cause a sharp move
 
 ## Step 3: IV Environment
-- Current implied volatility (IV) — absolute number and percentile/rank if available
-- Is IV elevated (>50th percentile) or compressed (<25th percentile)?
-- Interpretation: elevated IV = better premium, compressed IV = consider waiting or go further out
+
+Use the script's output as the primary source.
+
+- **Current ATM IV** — read from the 50Δ row in the nearest expiry.
+- **IV percentile/rank** — yfinance does not provide a true IV rank. Approximate by comparing current ATM IV to the script's reported **realized vol 30d** and **realized vol 90d**:
+  - ATM IV materially above realized vol → market pricing in elevated forward risk → richer premium
+  - ATM IV near or below realized vol → compressed → consider waiting or going further out
+- If a screener URL with a true IV rank is easily found via web search, prefer that and note the source.
+- State the conclusion: elevated / fair / compressed, with the numbers that justify it.
 
 ## Step 4: Covered Call Analysis
-Evaluate three scenarios for the nearest 3 monthly expiries:
 
-For each expiry, find strikes at approximately **15 delta**, **25 delta**, and **35 delta**:
+Read the call rows from the script output for the next 3 expiries. For each expiry, pull the 15Δ, 25Δ, and 35Δ rows (the script picks the closest available strike to each target).
 
-| Expiry | Strike | Delta | Premium | Yield (annualized) | Upside cap vs cost basis |
-|--------|--------|-------|---------|-------------------|--------------------------|
-| Near   |        |       |         |                   |                          |
-| Mid    |        |       |         |                   |                          |
-| Far    |        |       |         |                   |                          |
+Use the **mid** price as the premium estimate (script computes mid = (bid+ask)/2 when both are available, falling back to last).
 
-**Yield** = premium / current stock price, annualized.
+| Expiry | DTE | Strike | Δ | Premium (mid) | Yield (annualized) | Upside cap vs cost basis |
+|--------|-----|--------|---|---------------|-------------------|--------------------------|
+| Near   |     |        |   |               |                   |                          |
+| Mid    |     |        |   |               |                   |                          |
+| Far    |     |        |   |               |                   |                          |
+
+**Yield** = (premium / current stock price) × (365 / DTE).
 **Upside cap** = strike vs my cost basis — flag if strike is below breakeven.
 
+If OI < 100 or volume = 0 for the targeted strike, flag it as illiquid and prefer the next nearest strike with reasonable depth.
+
 ## Step 5: LEAPS / Long Call Analysis
-Only if I don't own shares and am considering a leveraged long position:
-- Evaluate Jan 2026 and Jan 2027 calls at 70–80 delta (deep ITM, synthetic stock)
+Only if I don't own shares and am considering a leveraged long position.
+
+For LEAPS, re-run the script with `--expiries 8 --targets 0.70,0.80` to surface deep-ITM strikes on the longest-dated expiries available, e.g.:
+
+```
+python3 scripts/option_chain.py [TICKER] --expiries 8 --targets 0.70,0.80
+```
+
+Then evaluate the longest-dated expiry shown (typically the next January LEAPS):
 - Compare premium cost to owning 100 shares outright
-- Breakeven at expiry
-- Max loss scenario
+- Breakeven at expiry = strike + premium paid
+- Max loss scenario = premium paid (option goes to 0)
 
 ## Step 6: Risk Scenarios
 For the recommended covered call trade:

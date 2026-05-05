@@ -33,8 +33,27 @@ watchlist.md                     ← Current positions & cost basis (always load
   review-position/SKILL.md       ← Existing position check-in
   preview-earnings/SKILL.md      ← Pre-earnings research brief
   assess-income-instrument/SKILL.md  ← Yield-instrument assessment
-outputs/                         ← Research reports saved here
+scripts/
+  option_chain.py                ← yfinance-based option chain helper
+  requirements.txt               ← Python deps for scripts/
+outputs/                         ← Research reports saved here (gitignored)
 ```
+
+## Live Options Data (one-time setup)
+
+The `analyze-options` skill calls `scripts/option_chain.py`, which uses [`yfinance`](https://github.com/ranaroussi/yfinance) to pull live(-ish, ~15 min delayed) option chains, IV, and Greeks. Install the deps once:
+
+```bash
+pip install -r scripts/requirements.txt
+```
+
+Quick test:
+
+```bash
+python3 scripts/option_chain.py SPY --expiries 1 --targets 0.25,0.50
+```
+
+If you skip the install, `analyze-options` will still run but fall back to web search — quality of the strike/IV/delta numbers will be much lower.
 
 ## Updating Your Watchlist
 
