@@ -5,7 +5,7 @@ description: Use when the user asks about options strategy on a specific ticker 
 
 # Options Analysis
 
-**Output file:** `/outputs/[TICKER]-options-[YYYY-MM-DD].md`
+**Output file:** `/outputs/[TICKER]/[TICKER]-options-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist)
 
 Follow these steps **exactly** — do not skip or reorder.
 
@@ -139,7 +139,7 @@ series:
 
 ## Output
 
-Write full analysis to `/outputs/[TICKER]-options-[YYYY-MM-DD].md`.
+Write full analysis to `/outputs/[TICKER]/[TICKER]-options-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist).
 
 **Frontmatter** (in addition to the shared fields in CLAUDE.md):
 ```yaml

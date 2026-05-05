@@ -30,7 +30,8 @@ When a skill activates, follow its steps **exactly** — do not skip or reorder 
 - Be direct — I want a clear recommendation, not a hedge-everything non-answer
 
 ## Output Rules
-- Save all full research reports to `/outputs/` using format: `[TICKER]-[playbook-name]-[YYYY-MM-DD].md`
+- Save full research reports to `/outputs/[TICKER]/[TICKER]-[skill]-[YYYY-MM-DD].md` — one folder per ticker, all reports for that name live together. Create the ticker folder if it doesn't exist.
+- Screens are not ticker-specific; save them to `/outputs/_screens/[descriptor]-[YYYY-MM-DD].md`
 - Summarize key findings in chat (3–5 bullets), full detail goes in the file
 - If I ask a follow-up question after a playbook run, answer from the context of that session — don't restart the playbook
 - Every report **must** start with YAML frontmatter (see "Report Frontmatter" below) so Obsidian Dataview can query across reports

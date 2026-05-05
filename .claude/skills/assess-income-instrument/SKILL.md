@@ -5,7 +5,7 @@ description: Use when the user asks about a yield-focused security where dividen
 
 # Income Instrument Assessment
 
-**Output file:** `/outputs/[TICKER]-income-[YYYY-MM-DD].md`
+**Output file:** `/outputs/[TICKER]/[TICKER]-income-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist)
 
 **Use this skill for:** Preferred stocks, REITs, BDCs, covered call ETFs, bonds/notes, structured products, and any security where yield is the primary investment thesis rather than capital appreciation.
 
@@ -203,7 +203,7 @@ This makes the spread over Treasuries visually obvious and is the single most us
 
 ## Output
 
-Write full assessment to `/outputs/[TICKER]-income-[YYYY-MM-DD].md`.
+Write full assessment to `/outputs/[TICKER]/[TICKER]-income-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist).
 
 **Frontmatter** (in addition to the shared fields in CLAUDE.md):
 ```yaml

@@ -5,7 +5,7 @@ description: Use when the user asks to review, check on, revisit, or reassess an
 
 # Position Review
 
-**Output file:** `/outputs/[TICKER]-review-[YYYY-MM-DD].md`
+**Output file:** `/outputs/[TICKER]/[TICKER]-review-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist)
 
 Follow these steps **exactly** — do not skip or reorder.
 
@@ -99,7 +99,7 @@ Skip if no premium has been collected (effective cost basis = cost basis makes t
 
 ## Output
 
-Write full review to `/outputs/[TICKER]-review-[YYYY-MM-DD].md`.
+Write full review to `/outputs/[TICKER]/[TICKER]-review-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist).
 
 **Frontmatter** (in addition to the shared fields in CLAUDE.md):
 ```yaml

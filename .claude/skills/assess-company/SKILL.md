@@ -5,7 +5,7 @@ description: Use when the user asks to assess, research, deep-dive, or evaluate 
 
 # Company Assessment
 
-**Output file:** `/outputs/[TICKER]-assessment-[YYYY-MM-DD].md`
+**Output file:** `/outputs/[TICKER]/[TICKER]-assessment-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist)
 
 Follow these steps **exactly** — do not skip or reorder.
 
@@ -110,7 +110,7 @@ Skip the chart if peer data is unavailable rather than fabricate values.
 
 ## Output
 
-Write the full report to `/outputs/[TICKER]-assessment-[YYYY-MM-DD].md`.
+Write the full report to `/outputs/[TICKER]/[TICKER]-assessment-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist).
 
 **Frontmatter** (in addition to the shared fields in CLAUDE.md):
 ```yaml

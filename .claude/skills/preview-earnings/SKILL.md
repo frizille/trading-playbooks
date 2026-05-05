@@ -5,7 +5,7 @@ description: Use when the user asks for an earnings preview, pre-earnings analys
 
 # Earnings Preview
 
-**Output file:** `/outputs/[TICKER]-earnings-[YYYY-MM-DD].md`
+**Output file:** `/outputs/[TICKER]/[TICKER]-earnings-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist)
 
 Follow these steps **exactly** — do not skip or reorder.
 
@@ -109,7 +109,7 @@ Use absolute % move (direction-agnostic) so implied vs realized are comparable.
 
 ## Output
 
-Write full preview to `/outputs/[TICKER]-earnings-[YYYY-MM-DD].md`.
+Write full preview to `/outputs/[TICKER]/[TICKER]-earnings-[YYYY-MM-DD].md` (create the ticker folder if it doesn't exist).
 
 **Frontmatter** (in addition to the shared fields in CLAUDE.md):
 ```yaml

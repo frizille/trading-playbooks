@@ -5,8 +5,8 @@ description: Use when the user asks to screen, scan, filter, rank, or shortlist 
 
 # Screen Tickers
 
-**Output file:** `/outputs/screen-[descriptor]-[YYYY-MM-DD].md`
-*(descriptor = short slug for the screen, e.g., `sp500-under-20`, `reits-yield-over-7`)*
+**Output file:** `/outputs/_screens/[descriptor]-[YYYY-MM-DD].md`
+*(descriptor = short slug for the screen, e.g., `sp500-under-20`, `reits-yield-over-7`. Screens aren't ticker-specific, so they live in the shared `_screens/` folder rather than a per-ticker one.)*
 
 This skill is a **funnel step**, not a deep analysis. The goal is to surface a ranked shortlist of candidates that warrant a follow-up `assess-company` (or `assess-income-instrument`) run. Do not produce full reports here.
 
@@ -76,7 +76,7 @@ Suggest the user trigger the deep-dive skill explicitly — do **not** auto-run 
 
 ## Output
 
-Write the screen results to `/outputs/screen-[descriptor]-[YYYY-MM-DD].md`.
+Write the screen results to `/outputs/_screens/[descriptor]-[YYYY-MM-DD].md`.
 
 **Frontmatter** (in addition to the shared fields in CLAUDE.md — note `ticker` is the descriptor for screens, and `price` is omitted):
 ```yaml
