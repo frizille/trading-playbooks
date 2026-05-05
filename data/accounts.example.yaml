@@ -1,0 +1,12 @@
+# Copy this file to data/accounts.yaml and fill in your accounts.
+# `name` is the value used in the trades.csv `account` column.
+# `type` is one of: taxable | ira | hsa | 401k
+accounts:
+  - name: account_1
+    display_name: "Example Brokerage (Individual Taxable)"
+    type: taxable
+    tax_notes: "Short-term assignments/sales trigger short-term capital gains."
+  - name: account_2
+    display_name: "Example IRA"
+    type: ira
+    tax_notes: "Tax-deferred; covered calls and CSPs incur no current tax."

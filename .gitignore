@@ -6,3 +6,7 @@ __pycache__/
 venv/
 .env
 watchlist.md
+data/trades.csv
+data/wishlist.csv
+data/accounts.yaml
+docs/superpowers/
