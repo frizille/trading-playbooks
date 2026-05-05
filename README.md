@@ -41,19 +41,23 @@ outputs/                         ← Research reports saved here (gitignored)
 
 ## Live Options Data (one-time setup)
 
-The `analyze-options` skill calls `scripts/option_chain.py`, which uses [`yfinance`](https://github.com/ranaroussi/yfinance) to pull live(-ish, ~15 min delayed) option chains, IV, and Greeks. Install the deps once:
+The `analyze-options` skill calls `scripts/option_chain.py`, which uses [`yfinance`](https://github.com/ranaroussi/yfinance) to pull live(-ish, ~15 min delayed) option chains, IV, and Greeks.
+
+On Homebrew Python you'll hit PEP 668 ("externally-managed-environment") if you `pip install` directly. Use a venv:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r scripts/requirements.txt
 ```
 
-Quick test:
+Quick test (venv must be active, or call `.venv/bin/python` directly):
 
 ```bash
 python3 scripts/option_chain.py SPY --expiries 1 --targets 0.25,0.50
 ```
 
-If you skip the install, `analyze-options` will still run but fall back to web search — quality of the strike/IV/delta numbers will be much lower.
+The `analyze-options` skill auto-detects `.venv/` and uses it; falls back to system `python3` if absent. If neither has the deps, the skill will fall back to web search — quality of the strike/IV/delta numbers will be much lower.
 
 ## Updating Your Watchlist
 

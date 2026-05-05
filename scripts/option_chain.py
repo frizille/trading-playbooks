@@ -194,7 +194,7 @@ def main() -> int:
         print(f"--- Expiry {exp_str} ({days} days, T={T:.3f}y) ---")
         for side, df, label in (("C", chain.calls, "Calls"), ("P", chain.puts, "Puts")):
             print(f"  {label}:")
-            print(f"    {'Δtgt':>+6}  {'Strike':>8}  {'Bid':>6}  {'Ask':>6}  {'Mid':>6}  {'IV':>6}  {'Δ':>+6}  {'OI':>8}  {'Vol':>7}")
+            print(f"    {'Δtgt':>6}  {'Strike':>8}  {'Bid':>6}  {'Ask':>6}  {'Mid':>6}  {'IV':>6}  {'Δ':>6}  {'OI':>8}  {'Vol':>7}")
             for t in targets:
                 signed = t if side == "C" else -t
                 row = find_strike_at_delta(df, signed, side, spot, T, r, div_yield)

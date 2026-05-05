@@ -13,7 +13,11 @@ Follow these steps **exactly** — do not skip or reorder.
 
 ## Pre-Flight
 1. Check `/watchlist.md` — what's the current position? Shares held, account type, current cost basis, and any existing options on this name.
-2. **Pull live chain data:** run `python3 scripts/option_chain.py [TICKER] --expiries 3` from the repo root. This is the canonical source for spot, IV, strikes, and delta in Steps 3–5. Output covers: spot price, risk-free rate, dividend yield, realized vol (30d / 90d), next earnings date, and tables of calls/puts at 15Δ / 25Δ / 35Δ / 50Δ for each of the next 3 expiries.
+2. **Pull live chain data:** run the option-chain helper from the repo root.
+   - If `.venv/` exists: `.venv/bin/python scripts/option_chain.py [TICKER] --expiries 3`
+   - Otherwise: `python3 scripts/option_chain.py [TICKER] --expiries 3`
+
+   This is the canonical source for spot, IV, strikes, and delta in Steps 3–5. Output covers: spot price, risk-free rate, dividend yield, realized vol (30d / 90d), next earnings date, and tables of calls/puts at 15Δ / 25Δ / 35Δ / 50Δ for each of the next 3 expiries.
 3. **If the script fails** (missing dependency, no network, ticker has no options), say so explicitly, then fall back to web search for spot + IV. Do not silently skip the script.
 
 ---
@@ -64,7 +68,10 @@ Only if I don't own shares and am considering a leveraged long position.
 
 For LEAPS, re-run the script with `--expiries 8 --targets 0.70,0.80` to surface deep-ITM strikes on the longest-dated expiries available, e.g.:
 
-```
+```bash
+# with venv:
+.venv/bin/python scripts/option_chain.py [TICKER] --expiries 8 --targets 0.70,0.80
+# without venv:
 python3 scripts/option_chain.py [TICKER] --expiries 8 --targets 0.70,0.80
 ```
 
