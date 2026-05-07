@@ -24,9 +24,11 @@ type ChatState = {
   sessionId: string | null;
   messages: Message[];
   connected: boolean;
+  lastError: string | null;
 
   setSessionId: (id: string | null) => void;
   setConnected: (b: boolean) => void;
+  setError: (msg: string | null) => void;
 
   appendUser: (text: string) => void;
   startAssistant: () => void;
@@ -47,12 +49,17 @@ export const useChatStore = create<ChatState>((set) => ({
   sessionId: null,
   messages: [],
   connected: false,
+  lastError: null,
 
   setSessionId: (id) => set({ sessionId: id }),
   setConnected: (b) => set({ connected: b }),
+  setError: (msg) => set({ lastError: msg }),
 
   appendUser: (text) =>
-    set((s) => ({ messages: [...s.messages, { role: "user", id: nid(), text }] })),
+    set((s) => ({
+      messages: [...s.messages, { role: "user", id: nid(), text }],
+      lastError: null,
+    })),
 
   startAssistant: () =>
     set((s) => ({
@@ -120,5 +127,5 @@ export const useChatStore = create<ChatState>((set) => ({
       return { messages: msgs };
     }),
 
-  reset: () => set({ messages: [], sessionId: null }),
+  reset: () => set({ messages: [], sessionId: null, lastError: null }),
 }));

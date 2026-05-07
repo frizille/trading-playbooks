@@ -16,7 +16,7 @@ Run before declaring a release-quality build. Requires the `claude` CLI on PATH 
 ## Chat — basic
 - [ ] Open `http://localhost:3000`, click ☰ to reveal the sidebar
 - [ ] Click "+ New chat" if a session was already loaded
-- [ ] Send "What is 2+2?" — response streams in (token-by-token thanks to `--include-partial-messages`)
+- [ ] Send "What is 2+2?" — assistant turn arrives as a whole message and renders
 - [ ] Session appears in drawer with auto-title "What is 2+2?"
 
 ## Chat — tool calls
@@ -27,7 +27,7 @@ Run before declaring a release-quality build. Requires the `claude` CLI on PATH 
 
 ## Chat — denied tool calls
 - [ ] Send a prompt that would invoke a tool not in your `~/.claude/settings.json` allowlist (e.g. ask Claude to use a niche tool that requires permission).
-- [ ] When claude attempts the tool: the tool-call block renders with a red border and a "denied" badge.
+- [ ] When claude attempts the tool: the tool-call block renders with a red border and an "error" badge.
 - [ ] Once the assistant turn ends, a yellow banner at the bottom of the assistant message lists the denied tool name(s).
 
 ## Sessions — resume

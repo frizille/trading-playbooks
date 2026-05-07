@@ -122,6 +122,10 @@ export class SessionManager extends EventEmitter<ManagerEventMap> {
       const sid = flight.knownSessionId || "";
       this.emit("error", sid, err);
     });
+    bridge.on("hang_timeout", () => {
+      const sid = flight.knownSessionId || "";
+      this.emit("error", sid, new Error("hang_timeout"));
+    });
 
     bridge.send(content);
     return flight;

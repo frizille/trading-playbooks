@@ -6,13 +6,13 @@ import type { ToolCall } from "@/stores/chatStore";
 export function ToolCallBlock({ tool }: { tool: ToolCall }) {
   const [open, setOpen] = useState(false);
   const summary = oneLineSummary(tool);
-  const denied = tool.error === "tool_error" || tool.error === "permission_denied";
+  const errored = !!tool.error;
 
   return (
     <div
       className={[
         "my-2 rounded-md border bg-chrome",
-        denied ? "border-danger/40" : "border-surface",
+        errored ? "border-danger/40" : "border-surface",
       ].join(" ")}
     >
       <button
@@ -23,8 +23,8 @@ export function ToolCallBlock({ tool }: { tool: ToolCall }) {
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span className="text-primary font-mono">{tool.name}</span>
         <span className="font-mono truncate flex-1">{summary}</span>
-        {denied ? (
-          <span className="text-danger font-medium">denied</span>
+        {errored ? (
+          <span className="text-danger font-medium">error</span>
         ) : tool.result !== undefined ? (
           <span className="text-success">ok</span>
         ) : (
@@ -37,8 +37,8 @@ export function ToolCallBlock({ tool }: { tool: ToolCall }) {
           <pre className="text-text">{safeStringify(tool.args)}</pre>
           {tool.result !== undefined ? (
             <>
-              <div className="text-muted mt-2">{denied ? "error:" : "result:"}</div>
-              <pre className={denied ? "text-danger" : "text-text"}>
+              <div className="text-muted mt-2">{errored ? "error:" : "result:"}</div>
+              <pre className={errored ? "text-danger" : "text-text"}>
                 {safeStringify(tool.result)}
               </pre>
             </>

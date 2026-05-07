@@ -12,19 +12,19 @@ function parseFixture(name: string): ClaudeEvent[] {
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean)
-    .map(parseLine)
-    .filter((e): e is ClaudeEvent => e !== null);
+    .flatMap(parseLine);
 }
 
 describe("parseLine", () => {
-  it("returns null for empty lines", () => {
-    expect(parseLine("")).toBeNull();
-    expect(parseLine("   ")).toBeNull();
+  it("returns [] for empty lines", () => {
+    expect(parseLine("")).toEqual([]);
+    expect(parseLine("   ")).toEqual([]);
   });
 
-  it("returns parse_error for non-JSON", () => {
-    const e = parseLine("not json");
-    expect(e?.kind).toBe("parse_error");
+  it("returns [parse_error] for non-JSON", () => {
+    const events = parseLine("not json");
+    expect(events).toHaveLength(1);
+    expect(events[0].kind).toBe("parse_error");
   });
 
   it("emits system_init detected by subtype, not by line position", () => {
@@ -70,9 +70,11 @@ describe("parseLine", () => {
       type: "stream_event",
       event: { type: "content_block_delta", delta: { type: "text_delta", text: "hello" } },
     });
-    const e = parseLine(line);
-    expect(e?.kind).toBe("text_delta");
-    if (e?.kind === "text_delta") expect(e.text).toBe("hello");
+    const events = parseLine(line);
+    expect(events).toHaveLength(1);
+    expect(events[0].kind).toBe("text_delta");
+    const e = events[0];
+    if (e.kind === "text_delta") expect(e.text).toBe("hello");
   });
 
   it("parses synthetic assistant text content as text_delta", () => {
@@ -80,9 +82,11 @@ describe("parseLine", () => {
       type: "assistant",
       message: { content: [{ type: "text", text: "ok" }] },
     });
-    const e = parseLine(line);
-    expect(e?.kind).toBe("text_delta");
-    if (e?.kind === "text_delta") expect(e.text).toBe("ok");
+    const events = parseLine(line);
+    expect(events).toHaveLength(1);
+    const e = events[0];
+    expect(e.kind).toBe("text_delta");
+    if (e.kind === "text_delta") expect(e.text).toBe("ok");
   });
 
   it("parses synthetic assistant thinking content as unknown", () => {
@@ -90,8 +94,25 @@ describe("parseLine", () => {
       type: "assistant",
       message: { content: [{ type: "thinking", thinking: "...", signature: "x" }] },
     });
-    const e = parseLine(line);
-    expect(e?.kind).toBe("unknown");
+    const events = parseLine(line);
+    expect(events).toHaveLength(1);
+    expect(events[0].kind).toBe("unknown");
+  });
+
+  it("emits one event per assistant content block (text + tool_use)", () => {
+    const line = JSON.stringify({
+      type: "assistant",
+      message: {
+        content: [
+          { type: "text", text: "calling now" },
+          { type: "tool_use", id: "tool-1", name: "Read", input: { file_path: "a.md" } },
+        ],
+      },
+    });
+    const events = parseLine(line);
+    expect(events).toHaveLength(2);
+    expect(events[0].kind).toBe("text_delta");
+    expect(events[1].kind).toBe("tool_use_start");
   });
 
   it("parses synthetic result with permission_denials", () => {
@@ -102,9 +123,11 @@ describe("parseLine", () => {
       total_cost_usd: 0.01,
       permission_denials: [{ tool_name: "Bash", tool_use_id: "t1", tool_input: { command: "rm -rf /" } }],
     });
-    const e = parseLine(line);
-    expect(e?.kind).toBe("result");
-    if (e?.kind === "result") {
+    const events = parseLine(line);
+    expect(events).toHaveLength(1);
+    const e = events[0];
+    expect(e.kind).toBe("result");
+    if (e.kind === "result") {
       expect(e.session_id).toBe("abc");
       expect(e.permission_denials).toHaveLength(1);
       expect(e.permission_denials[0].tool_name).toBe("Bash");
@@ -120,9 +143,11 @@ describe("parseLine", () => {
         ],
       },
     });
-    const e = parseLine(line);
-    expect(e?.kind).toBe("tool_result");
-    if (e?.kind === "tool_result") {
+    const events = parseLine(line);
+    expect(events).toHaveLength(1);
+    const e = events[0];
+    expect(e.kind).toBe("tool_result");
+    if (e.kind === "tool_result") {
       expect(e.is_error).toBe(true);
       expect(e.tool_use_id).toBe("t1");
     }

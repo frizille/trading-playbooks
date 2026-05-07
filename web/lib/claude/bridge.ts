@@ -56,7 +56,6 @@ export class ClaudeBridge extends EventEmitter<BridgeEventMap> {
       this.opts.args ??
       [
         "-p",
-        "--include-partial-messages",
         "--input-format", "stream-json",
         "--output-format", "stream-json",
         "--verbose",
@@ -125,13 +124,15 @@ export class ClaudeBridge extends EventEmitter<BridgeEventMap> {
   }
 
   private handleLine(line: string): void {
-    const ev = parseLine(line);
-    if (!ev) return;
-    if (ev.kind === "system_init" && ev.session_id) {
-      this._sessionId = ev.session_id;
-    }
+    const events = parseLine(line);
+    if (events.length === 0) return;
     this.startHangTimer(); // reset on activity
-    this.emit("event", ev);
+    for (const ev of events) {
+      if (ev.kind === "system_init" && ev.session_id) {
+        this._sessionId = ev.session_id;
+      }
+      this.emit("event", ev);
+    }
   }
 
   private startHangTimer(): void {

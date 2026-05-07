@@ -35,7 +35,7 @@ Open http://localhost:3000.
 
 ## Architecture (one-shot model)
 
-Each user message spawns a fresh `claude -p --include-partial-messages --input-format stream-json --output-format stream-json --verbose --resume <id>` subprocess. The subprocess streams events on stdout (init, text deltas, tool uses, tool results, result), the bridge parses them into typed events, the SessionManager forwards them over WebSocket to the connected client. The subprocess exits naturally after the result event.
+Each user message spawns a fresh `claude -p --input-format stream-json --output-format stream-json --verbose --resume <id>` subprocess. The subprocess streams whole assistant turns on stdout (init, whole-message assistant envelopes, tool uses, tool results, result); the bridge parses them into typed events, the SessionManager forwards them over WebSocket to the connected client. The subprocess exits naturally after the result event.
 
 Sessions persist via SQLite (`data/cockpit.db`) — one row per claude session id with title and last-touched timestamp. Conversation transcripts are owned by claude itself in `~/.claude/projects/...` and we replay them via `--resume <id>`.
 

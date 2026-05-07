@@ -57,6 +57,7 @@ export function useChatSocket() {
       case "session_started":
       case "subscribed":
         s.setSessionId(m.session_id);
+        s.setError(null);
         break;
 
       case "text_delta": {
@@ -89,6 +90,9 @@ export function useChatSocket() {
       case "error":
         // eslint-disable-next-line no-console
         console.warn("[ws error]", m.reason, m.detail);
+        useChatStore
+          .getState()
+          .setError(`${m.reason}${m.detail ? `: ${m.detail}` : ""}`);
         break;
     }
   }

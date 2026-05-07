@@ -46,30 +46,33 @@ describe("ClaudeBridge", () => {
     expect(bridge.sessionId).toBe("test-001");
   });
 
-  it("forwards --resume <id> when resumeId is set", async () => {
-    // We can't easily inspect args from outside; instead, spawn with custom command that echoes args.
-    // Use a tiny inline node script: print process.argv[2..] and exit.
+  it("respects explicit args[] and does not append --resume when one is provided", async () => {
+    // The dumper prints its argv as a JSON array on stdout, then exits. The array
+    // shape is not a known claude envelope, so the parser yields an `unknown` event
+    // whose `raw` is the parsed JSON array — perfect for asserting bridge arg synthesis.
     const argDumper = path.resolve(__dirname, "../../__fixtures__/arg-dumper.mjs");
-    // Generate the dumper at test time
     const fs = await import("node:fs");
     const dumperBody = `#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify(process.argv.slice(2)) + "\\n");\nprocess.exit(0);\n`;
     fs.writeFileSync(argDumper, dumperBody, { mode: 0o755 });
     const bridge = new ClaudeBridge({
       command: process.execPath,
-      args: [argDumper],
-      // No env/MODE because the dumper just exits
+      args: [argDumper, "explicit-arg-1", "explicit-arg-2"],
       cwd: process.cwd(),
       resumeId: "abc-xyz",
       hangTimeoutMs: 5_000,
-      // NOTE: bridge will compose its own claude args after [argDumper]; for this test
-      // we only care that the bridge does NOT mutate the explicit args[] when one is provided.
     });
     bridge.send("hi");
-    // Expect a parse_error event from the dumper output, then exit
-    await collectUntilExit(bridge);
-    // The actual assertion: when args are provided explicitly, bridge does not append --resume.
-    // (When args is not provided, bridge synthesizes its own claude args including --resume.)
-    expect(true).toBe(true); // placeholder: test passes if bridge respects explicit args[]
+    const { events } = await collectUntilExit(bridge);
+    const dumped = events
+      .filter((e) => e.kind === "unknown")
+      .map((e) => (e.kind === "unknown" ? e.raw : null))
+      .find((raw) => Array.isArray(raw)) as string[] | undefined;
+    if (!dumped) {
+      throw new Error("expected an unknown event whose raw is the dumper's argv array");
+    }
+    // Bridge should pass exactly the explicit args, not append --resume.
+    expect(dumped).not.toContain("--resume");
+    expect(dumped).toEqual(["explicit-arg-1", "explicit-arg-2"]);
   });
 
   it("emits exit with non-zero code on subprocess crash", async () => {

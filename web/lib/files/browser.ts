@@ -36,7 +36,12 @@ export function createBrowser(projectRoot: string): FilesBrowser {
     }
     if (cleaned === "watchlist.md") {
       if (!fs.existsSync(watchlistPath)) throw new Error("not_found");
-      return fs.realpathSync(watchlistPath);
+      const real = fs.realpathSync(watchlistPath);
+      // The watchlist must resolve to itself or to an outputs/ file — anything else is a sandbox escape.
+      if (real !== watchlistPath) {
+        assertInsideSandbox(real);
+      }
+      return real;
     }
     const candidate = path.resolve(rootReal, cleaned);
     let real: string;
@@ -71,11 +76,15 @@ export function createBrowser(projectRoot: string): FilesBrowser {
       const entries: Entry[] = names
         .map((name) => {
           const child = path.join(abs, name);
-          const cs = fs.statSync(child);
+          // Use lstatSync so symlinks are detected and filtered out below
+          // (instead of being reported with target metadata, which leaks structure).
+          const cs = fs.lstatSync(child);
+          if (cs.isSymbolicLink()) return null;
           return cs.isDirectory()
             ? ({ name, kind: "dir" } as Entry)
             : ({ name, kind: "file", size: cs.size } as Entry);
         })
+        .filter((e): e is Entry => e !== null)
         .sort((a, b) => {
           if (a.kind !== b.kind) return a.kind === "dir" ? -1 : 1;
           return a.name.localeCompare(b.name);

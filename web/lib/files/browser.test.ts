@@ -104,4 +104,23 @@ describe("files browser sandbox", () => {
     const b = createBrowser(projectRoot);
     expect(() => b.read("outputs/missing.md")).toThrowError();
   });
+
+  it("rejects watchlist.md when it is a symlink pointing outside the sandbox", () => {
+    // Replace the regular watchlist.md with a symlink to secret.csv (outside sandbox).
+    const watchlist = path.join(projectRoot, "watchlist.md");
+    fs.unlinkSync(watchlist);
+    fs.symlinkSync(path.join(projectRoot, "secret.csv"), watchlist);
+    const b = createBrowser(projectRoot);
+    expect(() => b.read("watchlist.md")).toThrowError(/sandbox/);
+  });
+
+  it("filters symlinks out of directory listings", () => {
+    const target = path.join(projectRoot, "secret.csv");
+    const link = path.join(projectRoot, "outputs", "leak.md");
+    fs.symlinkSync(target, link);
+    const b = createBrowser(projectRoot);
+    const out = b.list("outputs");
+    const names = out.entries.map((e) => e.name);
+    expect(names).not.toContain("leak.md");
+  });
 });
