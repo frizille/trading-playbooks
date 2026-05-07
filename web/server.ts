@@ -3,6 +3,12 @@ import next from "next";
 import { WebSocketServer } from "ws";
 import { parse } from "node:url";
 import path from "node:path";
+import { loadEnvConfig } from "@next/env";
+
+// Load .env.local / .env before reading any COCKPIT_* env vars below.
+// `tsx server.ts` runs Node directly, so Next's normal env loader never runs.
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
+
 import { getDb, closeDb } from "@/lib/db";
 import { SessionManager } from "@/lib/sessions/manager";
 import { attachWsRouter } from "@/lib/ws/router";
@@ -20,8 +26,9 @@ function resolveProjectRoot(): string {
 async function main() {
   const projectRoot = resolveProjectRoot();
   const app = next({ dev, dir: process.cwd() });
-  const handle = app.getRequestHandler();
   await app.prepare();
+  const handle = app.getRequestHandler();
+  const nextUpgrade = app.getUpgradeHandler();
 
   const db = getDb();
   const manager = new SessionManager({
@@ -45,7 +52,10 @@ async function main() {
     if (pathname === "/ws") {
       wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
     } else {
-      socket.destroy();
+      // Forward all other upgrades (Next.js dev HMR, etc.) to Next's handler.
+      // Without this, Turbopack's HMR client fails to connect and breaks
+      // hydration in dev mode — nothing clickable.
+      void nextUpgrade(req, socket, head);
     }
   });
 
