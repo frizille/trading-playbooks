@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useChatStore } from "@/stores/chatStore";
 
 type Server =
@@ -22,117 +22,141 @@ export type SendOpts =
   | { kind: "subscribe"; session_id: string }
   | { kind: "cancel" };
 
+// ---------- Singleton WebSocket ----------
+//
+// We deliberately keep the connection at module scope, not per-hook-caller.
+// Both ChatPane and SessionDrawer (and anyone else) use the same socket so
+// the server only sees ONE owning client per page. Without this, opening
+// a session from the drawer and then sending a message from the composer
+// would arrive on two different sockets and trip the session_in_use lock.
+
+let sock: WebSocket | null = null;
+let connecting = false;
+let reconnectAttempts = 0;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+function ensureConnection() {
+  if (typeof window === "undefined") return; // SSR / node guard
+  if (sock && (sock.readyState === WebSocket.OPEN || sock.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+  if (connecting) return;
+  connecting = true;
+
+  const s = new WebSocket(`ws://${location.host}/ws`);
+  sock = s;
+
+  s.onopen = () => {
+    connecting = false;
+    reconnectAttempts = 0;
+    useChatStore.getState().setConnected(true);
+  };
+
+  s.onclose = () => {
+    connecting = false;
+    sock = null;
+    useChatStore.getState().setConnected(false);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    const delay = Math.min(1000 * 2 ** reconnectAttempts++, 10_000);
+    reconnectTimer = setTimeout(ensureConnection, delay);
+  };
+
+  s.onerror = () => {
+    try { s.close(); } catch { /* noop */ }
+  };
+
+  s.onmessage = (e) => handleMessage(JSON.parse(e.data) as Server);
+}
+
+function handleMessage(m: Server) {
+  const s = useChatStore.getState();
+  switch (m.type) {
+    case "session_started":
+    case "subscribed":
+      s.setSessionId(m.session_id);
+      s.setError(null);
+      break;
+
+    case "replay_user_msg": {
+      const last = s.messages[s.messages.length - 1];
+      if (last?.role === "assistant" && !last.done) s.finishAssistant();
+      s.appendUser(m.content);
+      break;
+    }
+
+    case "replay_done": {
+      const last = s.messages[s.messages.length - 1];
+      if (last?.role === "assistant" && !last.done) s.finishAssistant();
+      break;
+    }
+
+    case "text_delta": {
+      const last = s.messages[s.messages.length - 1];
+      if (!last || last.role === "user" || (last.role === "assistant" && last.done)) {
+        s.startAssistant();
+      }
+      s.appendDelta(m.content);
+      break;
+    }
+
+    case "tool_use_start": {
+      const last = s.messages[s.messages.length - 1];
+      if (!last || last.role === "user" || (last.role === "assistant" && last.done)) {
+        s.startAssistant();
+      }
+      s.addToolStart({ id: m.id, name: m.name, args: m.args });
+      break;
+    }
+
+    case "tool_use_result":
+      s.addToolResult(m.id, m.result, m.error);
+      break;
+
+    case "result":
+      s.setPermissionDenials(m.permission_denials);
+      s.finishAssistant();
+      break;
+
+    case "error":
+      // eslint-disable-next-line no-console
+      console.warn("[ws error]", m.reason, m.detail);
+      useChatStore
+        .getState()
+        .setError(`${m.reason}${m.detail ? `: ${m.detail}` : ""}`);
+      break;
+  }
+}
+
+function rawSend(payload: unknown) {
+  if (!sock || sock.readyState !== WebSocket.OPEN) return false;
+  sock.send(JSON.stringify(payload));
+  return true;
+}
+
+// ---------- Hook ----------
+
 export function useChatSocket() {
-  const ws = useRef<WebSocket | null>(null);
-  const reconnectAttempts = useRef(0);
-
+  // Mount once per page; the singleton is idempotent.
   useEffect(() => {
-    let cancelled = false;
-    const open = () => {
-      if (cancelled) return;
-      const sock = new WebSocket(`ws://${location.host}/ws`);
-      ws.current = sock;
-
-      sock.onopen = () => {
-        reconnectAttempts.current = 0;
-        useChatStore.getState().setConnected(true);
-      };
-      sock.onclose = () => {
-        useChatStore.getState().setConnected(false);
-        if (cancelled) return;
-        const delay = Math.min(1000 * 2 ** reconnectAttempts.current++, 10_000);
-        setTimeout(open, delay);
-      };
-      sock.onerror = () => sock.close();
-      sock.onmessage = (e) => handle(JSON.parse(e.data) as Server);
-    };
-    open();
-    return () => {
-      cancelled = true;
-      ws.current?.close();
-    };
+    ensureConnection();
+    // We deliberately do NOT close on unmount — the socket should outlive
+    // any single component lifecycle. It only closes when the page unloads.
   }, []);
 
-  function handle(m: Server) {
-    const s = useChatStore.getState();
-    switch (m.type) {
-      case "session_started":
-      case "subscribed":
-        s.setSessionId(m.session_id);
-        s.setError(null);
-        break;
-
-      case "replay_user_msg": {
-        // Finalize any unfinished assistant turn before starting the next user turn,
-        // so each turn renders as its own bubble cluster.
-        const last = s.messages[s.messages.length - 1];
-        if (last?.role === "assistant" && !last.done) s.finishAssistant();
-        s.appendUser(m.content);
-        break;
-      }
-
-      case "replay_done": {
-        // Mark trailing assistant turn as done if not already
-        const last = s.messages[s.messages.length - 1];
-        if (last?.role === "assistant" && !last.done) s.finishAssistant();
-        break;
-      }
-
-      case "text_delta": {
-        const last = s.messages[s.messages.length - 1];
-        if (!last || last.role === "user" || (last.role === "assistant" && last.done)) {
-          s.startAssistant();
-        }
-        s.appendDelta(m.content);
-        break;
-      }
-
-      case "tool_use_start": {
-        const last = s.messages[s.messages.length - 1];
-        if (!last || last.role === "user" || (last.role === "assistant" && last.done)) {
-          s.startAssistant();
-        }
-        s.addToolStart({ id: m.id, name: m.name, args: m.args });
-        break;
-      }
-
-      case "tool_use_result":
-        s.addToolResult(m.id, m.result, m.error);
-        break;
-
-      case "result":
-        s.setPermissionDenials(m.permission_denials);
-        s.finishAssistant();
-        break;
-
-      case "error":
-        // eslint-disable-next-line no-console
-        console.warn("[ws error]", m.reason, m.detail);
-        useChatStore
-          .getState()
-          .setError(`${m.reason}${m.detail ? `: ${m.detail}` : ""}`);
-        break;
-    }
-  }
-
   function send(opts: SendOpts) {
-    const sock = ws.current;
-    if (!sock || sock.readyState !== WebSocket.OPEN) return;
     const sessionId = useChatStore.getState().sessionId;
     if (opts.kind === "user_msg") {
       useChatStore.getState().appendUser(opts.content);
-      sock.send(
-        JSON.stringify(
-          sessionId
-            ? { type: "user_msg", session_id: sessionId, content: opts.content }
-            : { type: "user_msg", content: opts.content },
-        ),
+      rawSend(
+        sessionId
+          ? { type: "user_msg", session_id: sessionId, content: opts.content }
+          : { type: "user_msg", content: opts.content },
       );
     } else if (opts.kind === "subscribe") {
-      sock.send(JSON.stringify({ type: "subscribe", session_id: opts.session_id }));
+      rawSend({ type: "subscribe", session_id: opts.session_id });
     } else if (opts.kind === "cancel") {
       if (!sessionId) return;
-      sock.send(JSON.stringify({ type: "cancel", session_id: sessionId }));
+      rawSend({ type: "cancel", session_id: sessionId });
     }
   }
 
