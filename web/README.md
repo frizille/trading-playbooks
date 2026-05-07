@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trading Cockpit
 
-## Getting Started
+Local web app for chatting with Claude about your trading research, browsing markdown reports, and (eventually) viewing visualizations — all wired through the `claude` CLI on your Max/Pro subscription.
 
-First, run the development server:
+**Localhost only.** Binds explicitly to `127.0.0.1`. Do not expose to the network — your Max subscription would be usable by anyone who can reach the port.
 
+## Prerequisites
+- Node 20+
+- `pnpm`
+- `claude` CLI on PATH, logged in with a Max or Pro subscription
+- macOS (primary target; Linux should work, untested)
+
+## Setup
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cd web
+pnpm install
+cp .env.local.example .env.local   # tweak ports / paths if desired
 pnpm dev
-# or
-bun dev
 ```
+Open http://localhost:3000.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's where
+- `app/`, `components/`, `hooks/`, `stores/` — Next.js 16 App Router frontend (React 19)
+- `lib/claude/` — subprocess bridge + stream-json parser (one-shot `claude -p` per message)
+- `lib/sessions/` — session manager + SQLite index (`data/cockpit.db`, gitignored)
+- `lib/ws/` — WebSocket protocol (zod-validated) + router
+- `lib/files/` — sandboxed file browser (outputs/ + watchlist.md only, with traversal guards)
+- `server.ts` — custom Node entry mounting Next.js + ws on :3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
+- `pnpm dev` — start dev server (Next.js dev mode + ws)
+- `pnpm build && pnpm start` — production-local build
+- `pnpm test` — unit + integration tests (vitest)
+- `pnpm test:watch` — interactive
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture (one-shot model)
 
-## Learn More
+Each user message spawns a fresh `claude -p --include-partial-messages --input-format stream-json --output-format stream-json --verbose --resume <id>` subprocess. The subprocess streams events on stdout (init, text deltas, tool uses, tool results, result), the bridge parses them into typed events, the SessionManager forwards them over WebSocket to the connected client. The subprocess exits naturally after the result event.
 
-To learn more about Next.js, take a look at the following resources:
+Sessions persist via SQLite (`data/cockpit.db`) — one row per claude session id with title and last-touched timestamp. Conversation transcripts are owned by claude itself in `~/.claude/projects/...` and we replay them via `--resume <id>`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Permission handling
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The cockpit does NOT show interactive Allow/Deny prompts. Tools listed in `~/.claude/settings.json` allowlist run automatically; denied tools surface as a "denied" badge on the tool-call block plus a yellow banner at the bottom of the assistant message listing the denied tools. To allow a tool you've been denying, edit `~/.claude/settings.json`.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Spec & design
+- `../docs/superpowers/specs/2026-05-06-trading-cockpit-design.md`
+- `../docs/superpowers/plans/2026-05-06-trading-cockpit.md`
