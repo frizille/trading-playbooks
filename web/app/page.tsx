@@ -2,6 +2,7 @@ import { Shell } from "@/components/Shell";
 import { TopBar } from "@/components/TopBar";
 import { ChatPane } from "@/components/chat/ChatPane";
 import { SessionDrawer } from "@/components/sessions/SessionDrawer";
+import { RightPane } from "@/components/right-pane/RightPane";
 
 export default function Home() {
   return (
@@ -9,11 +10,7 @@ export default function Home() {
       topBar={<TopBar />}
       drawer={<SessionDrawer />}
       chat={<ChatPane />}
-      rightPane={
-        <div className="flex-1 flex items-center justify-center text-muted text-sm">
-          Right pane (Task 16)
-        </div>
-      }
+      rightPane={<RightPane />}
     />
   );
 }
