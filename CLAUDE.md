@@ -78,3 +78,8 @@ If Obsidian isn't pointed at `/outputs/`, frontmatter and chart blocks still ren
 - Never recommend a single position exceed 15% of total portfolio without flagging the concentration risk
 - Always note if a recommendation would require taxable-account action that could trigger short-term capital gains
 - Do not factor in speculative catalysts without labeling them as speculative
+
+## Tool permission discipline
+- If a tool call is denied, treat one denial as final. Do not retry with variations (different paths, relative vs absolute, chained commands, splitting into smaller calls) hoping to slip past — the deny rule is intentional.
+- Surface the denial plainly and offer three options: (a) the user runs it manually, (b) the user updates `~/.claude/settings.json` to allow the pattern, or (c) abandon the operation. Then stop and wait.
+- Token cost and the appearance of evasion both go up with each retry; one clean denial + a short summary is the right shape.
