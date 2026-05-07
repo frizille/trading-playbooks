@@ -25,6 +25,8 @@ export const PermissionDenial = z.object({
 export const ServerEnvelope = z.discriminatedUnion("type", [
   z.object({ type: z.literal("session_started"), session_id: z.string() }),
   z.object({ type: z.literal("subscribed"), session_id: z.string() }),
+  z.object({ type: z.literal("replay_user_msg"), session_id: z.string(), content: z.string() }),
+  z.object({ type: z.literal("replay_done"), session_id: z.string() }),
   z.object({ type: z.literal("text_delta"), session_id: z.string(), content: z.string() }),
   z.object({
     type: z.literal("tool_use_start"),

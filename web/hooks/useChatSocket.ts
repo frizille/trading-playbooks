@@ -5,6 +5,8 @@ import { useChatStore } from "@/stores/chatStore";
 type Server =
   | { type: "session_started"; session_id: string }
   | { type: "subscribed"; session_id: string }
+  | { type: "replay_user_msg"; session_id: string; content: string }
+  | { type: "replay_done"; session_id: string }
   | { type: "text_delta"; session_id: string; content: string }
   | { type: "tool_use_start"; session_id: string; id: string; name: string; args: unknown }
   | { type: "tool_use_result"; session_id: string; id: string; result: unknown; error?: string }
@@ -59,6 +61,22 @@ export function useChatSocket() {
         s.setSessionId(m.session_id);
         s.setError(null);
         break;
+
+      case "replay_user_msg": {
+        // Finalize any unfinished assistant turn before starting the next user turn,
+        // so each turn renders as its own bubble cluster.
+        const last = s.messages[s.messages.length - 1];
+        if (last?.role === "assistant" && !last.done) s.finishAssistant();
+        s.appendUser(m.content);
+        break;
+      }
+
+      case "replay_done": {
+        // Mark trailing assistant turn as done if not already
+        const last = s.messages[s.messages.length - 1];
+        if (last?.role === "assistant" && !last.done) s.finishAssistant();
+        break;
+      }
 
       case "text_delta": {
         const last = s.messages[s.messages.length - 1];

@@ -25,7 +25,7 @@ function resolveProjectRoot(): string {
 
 async function main() {
   const projectRoot = resolveProjectRoot();
-  const app = next({ dev, dir: process.cwd() });
+  const app = next({ dev, dir: process.cwd(), hostname: HOST, port: PORT });
   await app.prepare();
   const handle = app.getRequestHandler();
   const nextUpgrade = app.getUpgradeHandler();
@@ -45,7 +45,7 @@ async function main() {
   });
 
   const wss = new WebSocketServer({ noServer: true });
-  attachWsRouter(wss, manager);
+  attachWsRouter(wss, manager, { projectRoot });
 
   httpServer.on("upgrade", (req, socket, head) => {
     const { pathname } = parse(req.url ?? "/");

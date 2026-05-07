@@ -1,6 +1,7 @@
 import type { WebSocketServer, WebSocket } from "ws";
 import { SessionManager } from "@/lib/sessions/manager";
 import type { ClaudeEvent } from "@/lib/claude/types";
+import { streamTranscript } from "@/lib/sessions/transcript";
 import { decodeClient, encodeServer, type ServerEnvelope } from "./protocol";
 
 type Subscription = {
@@ -8,7 +9,16 @@ type Subscription = {
   sessionId: string;
 };
 
-export function attachWsRouter(wss: WebSocketServer, manager: SessionManager): void {
+export type RouterOpts = {
+  /** Project root for resolving Claude transcript files. Required for replay. */
+  projectRoot?: string;
+};
+
+export function attachWsRouter(
+  wss: WebSocketServer,
+  manager: SessionManager,
+  opts: RouterOpts = {},
+): void {
   // Map session_id → owning WebSocket. Enforces single-active-client per session.
   const subscriptions = new Map<string, Subscription>();
 
@@ -94,6 +104,10 @@ export function attachWsRouter(wss: WebSocketServer, manager: SessionManager): v
             subscriptions.set(env.session_id, { ws, sessionId: env.session_id });
             claimedSession = env.session_id;
             ws.send(encodeServer({ type: "subscribed", session_id: env.session_id }));
+            // Kick off async transcript replay if we have a project root configured.
+            if (opts.projectRoot) {
+              void replayTranscriptToClient(ws, opts.projectRoot, env.session_id);
+            }
             break;
           }
 
@@ -144,6 +158,62 @@ export function attachWsRouter(wss: WebSocketServer, manager: SessionManager): v
       }
     });
   });
+}
+
+async function replayTranscriptToClient(
+  ws: WebSocket,
+  projectRoot: string,
+  sessionId: string,
+): Promise<void> {
+  try {
+    for await (const ev of streamTranscript(projectRoot, sessionId)) {
+      if (ws.readyState !== ws.OPEN) return;
+      switch (ev.kind) {
+        case "user_msg":
+          ws.send(encodeServer({ type: "replay_user_msg", session_id: sessionId, content: ev.content }));
+          break;
+        case "text_delta":
+          ws.send(encodeServer({ type: "text_delta", session_id: sessionId, content: ev.text }));
+          break;
+        case "tool_use_start":
+          ws.send(
+            encodeServer({
+              type: "tool_use_start",
+              session_id: sessionId,
+              id: ev.id,
+              name: ev.name,
+              args: ev.input,
+            }),
+          );
+          break;
+        case "tool_result":
+          ws.send(
+            encodeServer({
+              type: "tool_use_result",
+              session_id: sessionId,
+              id: ev.tool_use_id,
+              result: ev.content,
+              error: ev.is_error ? "tool_error" : undefined,
+            }),
+          );
+          break;
+      }
+    }
+    if (ws.readyState === ws.OPEN) {
+      ws.send(encodeServer({ type: "replay_done", session_id: sessionId }));
+    }
+  } catch (err) {
+    if (ws.readyState === ws.OPEN) {
+      ws.send(
+        encodeServer({
+          type: "error",
+          session_id: sessionId,
+          reason: "replay_failed",
+          detail: (err as Error).message,
+        }),
+      );
+    }
+  }
 }
 
 function eventToServerEnvelopes(sessionId: string, ev: ClaudeEvent): ServerEnvelope[] {
