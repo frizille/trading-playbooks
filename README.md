@@ -34,7 +34,7 @@ data/                            ← Source of truth for watchlist (real files g
 .claude/skills/
   screen-tickers/SKILL.md        ← Funnel: ranked shortlist from a universe
   assess-company/SKILL.md        ← Full equity research template
-  analyze-options/SKILL.md       ← Covered call & options strategy
+  analyze-options/SKILL.md       ← Options strategy (opportunistic doctrine — CC/CSP optional, never default)
   review-position/SKILL.md       ← Existing position check-in
   preview-earnings/SKILL.md      ← Pre-earnings research brief
   assess-income-instrument/SKILL.md  ← Yield-instrument assessment
