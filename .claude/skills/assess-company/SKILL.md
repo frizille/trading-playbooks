@@ -57,7 +57,7 @@ Search for most recent earnings and trailing twelve months (TTM) data:
 Only complete this step if the company has liquid options.
 - Current IV rank or IV percentile (if available)
 - Implied move for next earnings
-- Covered call opportunity: nearest monthly expiry, 20–30 delta strike, premium yield
+- Covered call reference point (informational, not a recommendation): nearest monthly expiry, 20–30 delta strike, premium yield — include only as market color; per the Aug 2026 doctrine, do not convert this into a trade suggestion unless it passes the `analyze-options` doctrine gate
 - Any notable unusual options activity in past 30 days
 
 ## Step 6: Verdict
@@ -79,7 +79,7 @@ Only complete this step if the company has liquid options.
 **If optioning:**
 - Specific trade: strike, expiry, quantity
 - Max loss / max gain scenario
-- How it fits into existing covered call strategy
+- Which doctrine qualification it meets (entry-anyway / dated-event hedge / cheap-IV long) — if none, no options trade; and for any exit range, show limit orders (default) beside the optional CC
 
 **Summary (3 bullets max):**
 - 

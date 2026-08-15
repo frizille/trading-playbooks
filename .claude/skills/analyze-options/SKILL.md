@@ -11,6 +11,17 @@ Follow these steps **exactly** — do not skip or reorder.
 
 ---
 
+## Step 0: Doctrine Gate (Aug 2026)
+
+The systematic wheel is retired. Before any analysis, state which qualification the prospective trade meets:
+- [ ] **Entry-anyway:** a CSP at a strike the investor would place a limit buy at regardless (model-based level from a current assessment)
+- [ ] **Dated-event hedge:** protects against a specific, named event with a date (earnings, AGM vote, regulatory ruling)
+- [ ] **Cheap-IV defined-risk long:** LEAPS/long option where IV is objectively cheap vs realized
+
+If none applies, the correct verdict is `NONE` — say so and stop after Step 3. Premium being "attractive" is not a qualification.
+
+---
+
 ## Pre-Flight
 1. Check `/watchlist.md` — what's the current position? Shares held, account type, current cost basis, and any existing options on this name.
 2. **Pull live chain data:** run the option-chain helper from the repo root.
@@ -61,6 +72,8 @@ Use the **mid** price as the premium estimate (script computes mid = (bid+ask)/2
 **Yield** = (premium / current stock price) × (365 / DTE).
 **Upside cap** = strike vs my cost basis — flag if strike is below breakeven.
 
+**Mechanism comparison (required):** alongside the CC table, show the plain alternative — a resting limit sell order at the same strike price. State what the CC adds (the premium) and what it costs (exit capped at strike; no execution guarantee by any deadline; upside above strike forfeited if assigned). The covered call is one mechanism, never the default. On high-momentum holdings, note explicitly that the forfeited upside has historically exceeded the premium collected.
+
 If OI < 100 or volume = 0 for the targeted strike, flag it as illiquid and prefer the next nearest strike with reasonable depth.
 
 ## Step 5: LEAPS / Long Call Analysis
@@ -89,8 +102,9 @@ For the recommended covered call trade:
 
 ## Step 7: Recommendation
 
-**Recommended trade:**
-- Type: Covered Call / Cash-Secured Put / LEAPS / Spread
+**Recommended trade** (`NONE` is a valid and common outcome under the doctrine gate):
+- Doctrine qualification met: entry-anyway / dated-event hedge / cheap-IV long
+- Type: Covered Call / Cash-Secured Put / LEAPS / Spread / None — if a CC, restate the limit-order alternative and why the CC is preferred *for this trade*
 - Strike: $
 - Expiry:
 - Quantity:

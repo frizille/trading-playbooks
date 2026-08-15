@@ -123,7 +123,7 @@ The yield is only as good as the issuer's ability to keep paying it. Assess:
 
 ## Step 5: Portfolio Fit
 
-- **Income role:** Does this replace or supplement existing income sources in my portfolio? (Covered call premiums, other dividends, etc.)
+- **Income role:** Does this replace or supplement existing income sources in my portfolio? (Dividends, interest, cash yield. Note: the systematic covered-call income program was retired Aug 2026 — do not treat CC premium as a standing income baseline.)
 - **Correlation to existing holdings:** Does this add new risk or stack on top of risks I already carry? (e.g., adding an asset-backed preferred when I already hold equities exposed to the same underlying asset)
 - **Account fit:**
   - **Taxable account:** Best for ROC-treatment instruments (tax-deferred income) or qualified dividend payers
@@ -175,7 +175,7 @@ Run three scenarios focused on income sustainability:
 - Exit triggers: (e.g., yield drops below X%, price breaks below $Y, issuer credit event)
 
 **Compared to existing income sources:**
-- My covered call campaigns currently generate approximately $[X]/month
+- Current portfolio income (dividends + cash yield) is approximately $[X]/month
 - This instrument would add $[Y]/month on a $[Z] position
 - Is the additional income worth the incremental risk? Yes / No / Marginal
 
