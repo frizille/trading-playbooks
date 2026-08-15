@@ -17,6 +17,7 @@ The systematic wheel is retired. Before any analysis, state which qualification 
 - [ ] **Entry-anyway:** a CSP at a strike the investor would place a limit buy at regardless (model-based level from a current assessment)
 - [ ] **Dated-event hedge:** protects against a specific, named event with a date (earnings, AGM vote, regulatory ruling)
 - [ ] **Cheap-IV defined-risk long:** LEAPS/long option where IV is objectively cheap vs realized
+- [ ] **Named Play:** the trade matches a written play spec in this file (currently: the Friz Special) with every entry condition satisfied — cite the checklist
 
 If none applies, the correct verdict is `NONE` — say so and stop after Step 3. Premium being "attractive" is not a qualification.
 
@@ -168,3 +169,56 @@ tags: [research, options]
 ```
 
 In chat, summarize with: recommended trade, premium yield, and key risk to watch.
+
+## Named Plays
+
+### The Friz Special (opportunistic short-vol premium harvest)
+
+**Classification:** doctrine category (d). A mean-reversion premium harvest, not an exit
+mechanism and not intended to reach expiry or assignment.
+
+**Thesis:** after an extended multi-day run, both price and implied volatility are
+elevated. Selling far-OTM, long-dated calls (vega-heavy) harvests the reversion of
+both. The vega does more work than the delta — the underlying merely going sideways
+while IV normalizes deflates the calls materially; a pullback accelerates it.
+
+**Entry conditions (all required):**
+- Underlying up roughly 25%+ within the last 3–5 sessions (extended run, not a single gap)
+- IV elevated versus recent realized vol (check via option_chain.py Step 3 method)
+- Strike at least ~50% OTM at entry
+- Expiry 6+ months out (maximizes vega; keeps gamma low)
+- Fully covered: contracts × 100 ≤ shares held in the same account. Never naked.
+- Premium meaningful — as a reference, the inaugural trade collected ~17% of covered
+  position value in one shot
+
+**Horizon:** 3–4 months typical. This is a position trade, not a scalp — the pullback
+and IV normalization play out over months, and the long-dated expiry gives it room.
+
+**Profit target:** buy back when the calls have lost ~30% of entry value (close at
+~70% of the credit received). Do not hold for the remaining decay — the last 70% is
+slow theta against open-ended event risk.
+
+**Abandon rules (DEFAULTS — confirm or adjust per trade; deviating requires a written
+reason at entry, not in the moment):**
+- **Hard stop:** close if the call mark reaches 1.5× the entry credit
+- **Strike proximity:** mandatory close-or-decide if the underlying reaches 85% of the
+  strike — beyond that, gamma and assignment mechanics take over the trade
+- **90-day re-underwrite:** if neither target nor stop has hit by day 90, re-run the
+  entry checklist; close unless the conditions would justify entering fresh today
+- **Never roll to defend.** Rolling a losing short-premium campaign is how the IRE
+  loss compounded. One trade, one decision at target or stop.
+
+**Binary events:** if the window contains earnings, shareholder votes, or other dated
+binaries, decide IN WRITING at entry whether the play holds through each event or
+exits before it. An event-driven selloff is often the pullback the play is waiting
+for — but short vega marks against the position as IV bids into the event. Either
+choice is valid; drifting into the event undecided is not.
+
+**Failure fallback:** if held to assignment (a failed Friz Special), the effective
+exit is strike + premium. This must be a price the holder can live with selling at —
+which is why the strike-distance and covered-only conditions exist.
+
+**Logging:** log entry date, run size that triggered entry, strike distance, IV
+context, credit, target, stops, event decisions — and at close, which rule fired.
+The play is only as repeatable as its log.
+
