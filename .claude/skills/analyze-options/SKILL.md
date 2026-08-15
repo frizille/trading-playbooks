@@ -185,11 +185,35 @@ while IV normalizes deflates the calls materially; a pullback accelerates it.
 **Entry conditions (all required):**
 - Underlying up roughly 25%+ within the last 3–5 sessions (extended run, not a single gap)
 - IV elevated versus recent realized vol (check via option_chain.py Step 3 method)
-- Strike at least ~50% OTM at entry
+- Strike at least ~50% OTM at entry, or the highest strike the chain lists if that is
+  nearer (chain availability often binds — see flags)
 - Expiry 6+ months out (maximizes vega; keeps gamma low)
 - Fully covered: contracts × 100 ≤ shares held in the same account. Never naked.
 - Premium meaningful — as a reference, the inaugural trade collected ~17% of covered
   position value in one shot
+
+**Flags to surface at entry (NOT limits — report them, then let the trader decide):**
+These are diagnostics, not gates. None of them blocks a trade. Compute and state each
+one plainly at entry so the decision is made with the number in view.
+- **Delta at entry.** Percentage OTM is vol-blind and can badly understate risk on
+  high-IV names. Worked example: NBIS Mar-27 $440C at 58% OTM carried ~0.44 delta at
+  ~104% IV — close to a coin flip on assignment, not the remote tail "58% OTM"
+  suggests. A hypothetical IREN Jun-27 $70C at 59% OTM priced ~0.48 delta. Same
+  distance, very different risk from the same rule. State the delta; do not cap it.
+- **Strike availability.** Sometimes the desired distance simply is not listed — the
+  NBIS $440 was the highest strike in the March 2027 chain, so 58% OTM was the
+  ceiling the chain allowed, not a preference. When the chain is the binding
+  constraint, record that; it explains a higher delta that no strike selection could
+  have avoided, and it is a reason to consider a further expiry where more strikes
+  may exist.
+- **Size as % of covered position.** State contracts as a share of the underlying
+  holding and the credit as a percentage of position value (NBIS: 15/15 lots, credit
+  ~16.7% of position). Full coverage of a lot is allowed; just say so out loud.
+- **IV context.** Current IV vs recent realized, and IV rank if available. The play is
+  short vega — this is the variable doing most of the work.
+- **Assignment price sanity.** Strike + premium against the current model ladder
+  (base / prob-weighted / bull). If the effective sale price sits below the base case,
+  flag it prominently.
 
 **Horizon:** 3–4 months typical. This is a position trade, not a scalp — the pullback
 and IV normalization play out over months, and the long-dated expiry gives it room.
