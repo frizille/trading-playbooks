@@ -21,6 +21,11 @@ The systematic wheel is retired. Before any analysis, state which qualification 
 
 If none applies, the correct verdict is `NONE` — say so and stop after Step 3. Premium being "attractive" is not a qualification.
 
+**Also mandatory before any recommendation:** state the variance risk premium in
+percentage points (see Step 3). For any structure that SELLS premium, a negative
+VRP must be called out explicitly as an argument against the trade, regardless of
+how the annualized return looks.
+
 ---
 
 ## Pre-Flight
@@ -56,6 +61,42 @@ Use the script's output as the primary source.
   - ATM IV materially above realized vol → market pricing in elevated forward risk → richer premium
   - ATM IV near or below realized vol → compressed → consider waiting or going further out
 - If a screener URL with a true IV rank is easily found via web search, prefer that and note the source.
+
+### Variance Risk Premium — MANDATORY for every options play
+
+Always compute and state the **variance risk premium (VRP)**:
+
+```
+VRP = implied volatility − realized volatility     (in PERCENTAGE POINTS, "pp")
+```
+
+Report it in this exact format, every time, in chat and in any artifact:
+
+> **IV 65% / RV 96% / VRP −31.4pp / IV rank 43.5%**
+
+Percentage points, not percent: 65% minus 96% is −31.4**pp**, not −31.4%. The
+distinction matters because the latter reads as a ratio and understates the gap.
+
+**How to read it — this is the single most important number for any premium sale:**
+
+| VRP | Meaning | Implication |
+|---|---|---|
+| **Positive** | Options priced above the movement that actually occurs | Genuine edge for the SELLER — the structural case for short premium |
+| **Near zero** | Fairly priced | Expected value ≈ 0 by construction, before costs |
+| **Negative** | Realized vol running hotter than implied | Selling UNDERPRICED volatility; EV is negative before costs; elevated assignment risk |
+
+Never treat IV rank alone as sufficient. IV rank says where implied vol sits in
+its own history; VRP says whether implied vol is high enough *relative to what
+the underlying is actually doing*. A mid-range IV rank with deeply negative VRP —
+MU on 17 Aug 2026 read IV rank 43.5% with VRP −31.4pp — is a sell-premium trap:
+the annualized ROC headline looks rich while the expected value is negative.
+
+**Also state, for any short-premium structure:** a high win rate is not an edge.
+A fairly priced 0.30-delta put wins roughly 67% of the time and still has zero
+expected value, because the average shortfall given assignment runs about 3× the
+premium collected. Edge comes only from (1) positive VRP, or (2) genuinely
+wanting the shares at the strike. Say which one applies, or say neither does.
+
 - State the conclusion: elevated / fair / compressed, with the numbers that justify it.
 
 ## Step 4: Covered Call Analysis
@@ -138,6 +179,13 @@ series:
 ```
 ````
 
+State the VRP (ATM IV − Realized 30d, in pp) directly beneath this chart.
+
+````
+```chart
+```
+````
+
 **2. Annualized premium yield by expiry** (from the Step 4 covered call table — use the recommended Δ row at each expiry):
 
 ````
@@ -209,8 +257,11 @@ one plainly at entry so the decision is made with the number in view.
 - **Size as % of covered position.** State contracts as a share of the underlying
   holding and the credit as a percentage of position value (NBIS: 15/15 lots, credit
   ~16.7% of position). Full coverage of a lot is allowed; just say so out loud.
-- **IV context.** Current IV vs recent realized, and IV rank if available. The play is
-  short vega — this is the variable doing most of the work.
+- **IV context — state the VRP in pp.** Report as "IV X% / RV Y% / VRP ±Zpp / IV
+  rank N%". The play is short vega, so this is the variable doing most of the work.
+  A negative VRP does not block a Friz Special (nothing does), but it must be
+  surfaced: it means the vol being sold is cheap relative to actual movement, and
+  the mean-reversion thesis is carrying the trade without help from pricing.
 - **Assignment price sanity.** Strike + premium against the current model ladder
   (base / prob-weighted / bull). If the effective sale price sits below the base case,
   flag it prominently.

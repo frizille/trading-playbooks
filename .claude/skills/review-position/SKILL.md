@@ -56,7 +56,7 @@ Use the Finnhub feed from Pre-Flight as the primary news source; supplement with
 Review all active options on this name:
 - Are any covered calls at risk of being in-the-money (ITM) near expiry?
 - Should any positions be rolled, closed early, or left to expire?
-- Do NOT prospect for new calls to sell by default (doctrine, Aug 2026). Only raise a new options structure if it passes the doctrine gate in `analyze-options` Step 0 — and if an exit range is recommended in Step 7, present it as resting limit orders (default) with the covered-call alternative (optional) side by side.
+- Do NOT prospect for new calls to sell by default (doctrine, Aug 2026). If any options structure is raised, state the VRP in percentage points first ("IV X% / RV Y% / VRP ±Zpp / IV rank N%"). Only raise a new options structure if it passes the doctrine gate in `analyze-options` Step 0 — and if an exit range is recommended in Step 7, present it as resting limit orders (default) with the covered-call alternative (optional) side by side.
 
 For each active option:
 | Position | Status | Action |

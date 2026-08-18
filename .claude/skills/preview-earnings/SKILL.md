@@ -75,7 +75,7 @@ Check all active options expiring within 2 weeks of earnings:
 **Pre-earnings action needed?**
 - Should any covered calls be closed or rolled before earnings? (Managing existing options is always in scope.)
 - Do not default to selling premium into the earnings window (doctrine, Aug 2026). A pre-earnings options structure must pass the `analyze-options` Step 0 doctrine gate — an earnings date qualifies as a dated event for a *hedge*, not automatically for premium selling.
-- Is there an opportunity to play the implied move (straddle, etc.)? Defined-risk longs require the cheap-IV qualification — pre-earnings IV is usually the opposite.
+- Is there an opportunity to play the implied move (straddle, etc.)? Defined-risk longs require the cheap-IV qualification — pre-earnings IV is usually the opposite. State the VRP in percentage points for any structure considered ("IV X% / RV Y% / VRP ±Zpp / IV rank N%"); pre-earnings IV is typically bid well above realized, which favours sellers on VRP alone but carries the binary risk that VRP does not capture.
 - If holding no position: is there a post-earnings entry opportunity in any scenario?
 
 ## Step 7: Game Plan

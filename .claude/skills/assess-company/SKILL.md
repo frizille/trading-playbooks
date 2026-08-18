@@ -57,7 +57,7 @@ Search for most recent earnings and trailing twelve months (TTM) data:
 Only complete this step if the company has liquid options.
 - Current IV rank or IV percentile (if available)
 - Implied move for next earnings
-- Covered call reference point (informational, not a recommendation): nearest monthly expiry, 20–30 delta strike, premium yield — include only as market color; per the Aug 2026 doctrine, do not convert this into a trade suggestion unless it passes the `analyze-options` doctrine gate
+- Covered call reference point (informational, not a recommendation): nearest monthly expiry, 20–30 delta strike, premium yield. If any options figure is cited, also state the VRP in percentage points ("IV X% / RV Y% / VRP ±Zpp / IV rank N%") — see analyze-options Step 3 — include only as market color; per the Aug 2026 doctrine, do not convert this into a trade suggestion unless it passes the `analyze-options` doctrine gate
 - Any notable unusual options activity in past 30 days
 
 ## Step 6: Verdict
